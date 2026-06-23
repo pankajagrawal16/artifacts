@@ -13,6 +13,10 @@
             box-sizing: border-box;
         }
         
+        html {
+            scroll-behavior: smooth;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
@@ -284,6 +288,15 @@
         // Initialize Mermaid
         mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
         
+        // Helper function to generate slug from text
+        function slugify(text) {
+            return text.toString().toLowerCase()
+                .trim()
+                .replace(/&/g, 'and')
+                .replace(/[\s\W-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+        
         // Markdown-it configuration
         const md = window.markdownit({
             html: true,
@@ -301,6 +314,20 @@
                 return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
             }
         });
+        
+        // Custom heading rendering with IDs for anchor links
+        const defaultHeadingRender = md.renderer.rules.heading_open || ((tokens, idx) => md.renderer.renderToken(tokens, idx));
+        md.renderer.rules.heading_open = (tokens, idx) => {
+            const token = tokens[idx];
+            if (token.tag === 'h1' || token.tag === 'h2' || token.tag === 'h3') {
+                const contentToken = tokens[idx + 1];
+                if (contentToken && contentToken.content) {
+                    const id = slugify(contentToken.content);
+                    token.attrSet('id', id);
+                }
+            }
+            return md.renderer.renderToken([token], idx, {});
+        };
         
         // Custom rendering for mermaid blocks
         const defaultFenceRender = md.renderer.rules.fence || ((tokens, idx) => md.renderer.renderToken(tokens, idx));
