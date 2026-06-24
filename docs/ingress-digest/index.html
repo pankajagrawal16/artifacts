@@ -451,14 +451,15 @@
             const going = !document.body.classList.contains('dark');
             localStorage.setItem('theme', going ? 'dark' : 'light');
             applyTheme(going);
-            // Re-initialize Mermaid with the matching theme
+            // Re-initialize Mermaid with the matching theme then re-render all diagrams
             const mermaidTheme = going ? 'dark' : 'default';
             mermaid.initialize({ startOnLoad: false, theme: mermaidTheme, securityLevel: 'loose' });
             document.querySelectorAll('.mermaid').forEach(el => {
-                const src = el.getAttribute('data-src') || el.textContent;
-                if (!el.getAttribute('data-src')) el.setAttribute('data-src', src);
-                el.removeAttribute('data-processed');
-                el.innerHTML = el.getAttribute('data-src');
+                const src = el.getAttribute('data-src');
+                if (src) {
+                    el.removeAttribute('data-processed');
+                    el.innerHTML = src.replace(/&quot;/g, '"');
+                }
             });
             if (typeof mermaid.run === 'function') {
                 mermaid.run({ querySelector: '.mermaid' });
@@ -519,22 +520,20 @@
         md.renderer.rules.fence = (tokens, idx) => {
             const token = tokens[idx];
             if (token.info === 'mermaid') {
-                return `<div class="mermaid">${md.utils.escapeHtml(token.content)}</div>`;
+                // Do NOT escapeHtml here — Mermaid must receive raw source
+                const src = token.content.trim();
+                return `<div class="mermaid" data-src="${src.replace(/"/g, '&quot;')}">${src}</div>`;
             }
             return defaultFenceRender(tokens, idx);
         };
         
         function renderMermaidBlocks() {
-            if (!window.mermaid) {
-                return;
-            }
-
+            if (!window.mermaid) return;
             // Mermaid v10+ uses run(); keep contentLoaded() for compatibility.
             if (typeof mermaid.run === 'function') {
                 mermaid.run({ querySelector: '.mermaid' });
                 return;
             }
-
             if (typeof mermaid.contentLoaded === 'function') {
                 mermaid.contentLoaded();
             }
