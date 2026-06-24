@@ -167,10 +167,14 @@ def pick_subscription(token: str) -> str:
     while True:
         try:
             choice = input(f"Select a subscription [1-{len(subs)}]: ").strip()
+        except KeyboardInterrupt:
+            print()
+            sys.exit(0)
+        try:
             idx = int(choice) - 1
             if 0 <= idx < len(subs):
                 return subs[idx]["subscriptionId"]
-        except (ValueError, KeyboardInterrupt):
+        except ValueError:
             pass
         print(f"  Please enter a number between 1 and {len(subs)}.")
 
@@ -303,10 +307,14 @@ def pick_region() -> str:
     while True:
         try:
             choice = input(f"Select a region [1-{len(AZURE_OPENAI_REGIONS)}]: ").strip()
+        except KeyboardInterrupt:
+            print()
+            sys.exit(0)
+        try:
             idx = int(choice) - 1
             if 0 <= idx < len(AZURE_OPENAI_REGIONS):
                 return AZURE_OPENAI_REGIONS[idx]
-        except (ValueError, KeyboardInterrupt):
+        except ValueError:
             pass
         print(f"  Please enter a number between 1 and {len(AZURE_OPENAI_REGIONS)}.")
 
@@ -450,4 +458,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nAborted.")
+        sys.exit(0)
