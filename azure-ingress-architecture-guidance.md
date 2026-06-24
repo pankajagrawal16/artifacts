@@ -199,6 +199,15 @@ graph TD
     style J fill:#ffccbc
 ```
 
+### Decision tree alignment with Azure load-balancing guidance
+
+This decision tree follows Azure technology-choice guidance for load balancing: [Load balancing options in Azure](https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/load-balancing-overview).
+
+- **Azure Front Door** remains the default in this section because it is the global Layer 7 entry point for internet-facing HTTP/S applications.
+- **Application Gateway** is added only when regional Layer 7 controls are needed (regional policy, routing, or isolation requirements).
+- **Traffic Manager** should be considered when a workload requires global distribution for **non-HTTP/S** protocols.
+- **Azure Load Balancer** should be used for regional **Layer 4** balancing scenarios, not as a replacement for global HTTP/S edge routing.
+
 ### Final recommendation for platform teams
 
 1. **Start with Front Door Premium + Private Link** — simplest, most cost-effective
