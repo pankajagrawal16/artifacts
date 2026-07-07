@@ -21,6 +21,7 @@ Reference documentation and architecture guidance.
 | Document | Description |
 |---|---|
 | `ingress-digest/` | Azure ingress architecture options with mapping to Azure Learn and Well-Architected guidance |
+| `real-time-quota/` | Azure quota sizing guidance for the `gpt-realtime` model |
 
 ---
 
