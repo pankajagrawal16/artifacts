@@ -226,6 +226,17 @@
         <label>Peak Factor (&times; over average) &mdash; for quota sizing</label>
         <input type="range" id="peak" min="1" max="5" step="0.1" value="1.6">
         <div class="hint">Peak factor: <strong id="peakVal">1.6</strong>&times; &mdash; headroom for busy-hour concurrency and retries.</div>
+
+        <label>Existing Subscription Tier</label>
+        <select id="tier">
+          <option value="1" selected>Tier 1</option>
+          <option value="2">Tier 2</option>
+          <option value="3">Tier 3</option>
+          <option value="4">Tier 4</option>
+          <option value="5">Tier 5</option>
+          <option value="6">Tier 6</option>
+        </select>
+        <div class="hint">Your subscription's current quota tier (default limits from the Foundry docs). Not sure? Check via the control-plane API described in the <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">quotas &amp; limits</a> doc.</div>
       </div>
 
       <!-- Cost -->
@@ -259,7 +270,7 @@
             <div class="qm"><div class="l">Avg Load</div><div class="v" id="qmAvg">&mdash;</div></div>
             <div class="qm"><div class="l">Peak Load (<span id="qmPeakX">1.6</span>&times;)</div><div class="v" id="qmPeak">&mdash;</div></div>
             <div class="qm"><div class="l">Recommended Request</div><div class="v big" id="qmRec">&mdash;</div></div>
-            <div class="qm"><div class="l">Tier 1 Default</div><div class="v" id="qmTier">100,000</div></div>
+            <div class="qm"><div class="l" id="qmTierLabel">Tier 1 Limit</div><div class="v" id="qmTier">100,000</div></div>
           </div>
           <div id="quotaCallout"></div>
         </div>
@@ -285,7 +296,7 @@
       <div class="assump">
         <h4>Assumptions</h4>
         <ul>
-          <li>Speaking time is split between user and assistant per the ratio slider (default 50 / 50).</li>
+          <li id="ratioAssumption">Speaking time is split between user and assistant per the ratio slider.</li>
           <li>Audio input tokens: <strong>10 tokens/second</strong> (1 token per 100&nbsp;ms).</li>
           <li>Audio output tokens: <strong>20 tokens/second</strong> (1 token per 50&nbsp;ms).</li>
           <li id="cacheAssumption">Previous-turn (history) tokens are cached per the <strong>Cache Hit Rate</strong> control; any uncached share is billed at the full input rate.</li>
@@ -342,9 +353,17 @@
     "gpt-realtime-1.5": { audioIn: 32,  audioCached: 0.40, audioOut: 64, textIn: 4,    textCached: 0.40, textOut: 16 },
     "gpt-realtime-mini":{ audioIn: 10,  audioCached: 0.30, audioOut: 20, textIn: 0.60, textCached: 0.06, textOut: 2.40 },
   };
-  // Tier 1 Global Standard limit for the gpt-realtime family
-  const TIER1_TPM = 100000;
-  const TIER1_RPM = 200;
+  // Tier limits (Global Standard) for the gpt-realtime family, from the Foundry quotas & limits doc.
+  // Tiers 1-5 share the same limit; Tier 6 is higher. gpt-realtime-1.5 / -mini are not listed
+  // separately, so the gpt-realtime family limits are used.
+  const TIER_LIMITS = {
+    "1": { tpm: 100000, rpm: 200 },
+    "2": { tpm: 100000, rpm: 200 },
+    "3": { tpm: 100000, rpm: 200 },
+    "4": { tpm: 100000, rpm: 200 },
+    "5": { tpm: 100000, rpm: 200 },
+    "6": { tpm: 150000, rpm: 300 },
+  };
 
   // Tokenization assumptions
   const AUDIO_IN_TPS  = 10;   // user audio: 10 tokens / second
@@ -352,7 +371,7 @@
   const TEXT_OUT_TPS  = 3;    // assistant transcript: ~3 tokens / second
   const MIN_PER_MONTH = 30 * 24 * 60; // 43,200
 
-  const ids = ["model","convs","duration","turns","sysPrompt","billMode","cacheRate","ratio","peak"];
+  const ids = ["model","convs","duration","turns","sysPrompt","billMode","cacheRate","ratio","peak","tier"];
   ids.forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener(el.tagName === "SELECT" ? "change" : "input", render);
@@ -385,6 +404,8 @@
     // Update ratio + peak labels
     document.getElementById("ratioLeft").textContent  = `${Math.round(userShare*100)}% User Input (${userSec.toFixed(0)}s)`;
     document.getElementById("ratioRight").textContent = `${Math.round(asstShare*100)}% Assistant Output (${asstSec.toFixed(0)}s)`;
+    document.getElementById("ratioAssumption").innerHTML =
+      `Speaking time is split <strong>${Math.round(userShare*100)}% user / ${Math.round(asstShare*100)}% assistant</strong> per turn (${userSec.toFixed(0)}s user, ${asstSec.toFixed(0)}s assistant of a ${secPerTurn.toFixed(0)}s turn).`;
     document.getElementById("peakVal").textContent = peak.toFixed(1);
     document.getElementById("qmPeakX").textContent = peak.toFixed(1);
 
@@ -461,28 +482,34 @@
     document.getElementById("kpiMonthly").textContent = money(totalCost);
 
     // Quota (TPM)
+    const tier = document.getElementById("tier").value;
+    const tierLimit = TIER_LIMITS[tier] || TIER_LIMITS["1"];
+    const tierTpm = tierLimit.tpm;
+    const tierRpm = tierLimit.rpm;
     const avgTpm = totalTokens / MIN_PER_MONTH;
     const peakTpm = avgTpm * peak;
     const recommended = ceilTo(peakTpm, 10000);
     document.getElementById("qmAvg").textContent  = fmt(avgTpm);
     document.getElementById("qmPeak").textContent = fmt(peakTpm);
     document.getElementById("qmRec").textContent  = fmt(recommended) + " TPM";
-    document.getElementById("qmTier").textContent = fmt(TIER1_TPM);
-    document.getElementById("quotaModelLabel").textContent = `${modelLabel} \u00b7 Global Standard`;
+    document.getElementById("qmTier").textContent = fmt(tierTpm);
+    document.getElementById("qmTierLabel").textContent = `Tier ${tier} Limit`;
+    document.getElementById("quotaModelLabel").textContent = `${modelLabel} \u00b7 Global Standard \u00b7 Tier ${tier}`;
 
     const statusEl = document.getElementById("quotaStatus");
     const calloutEl = document.getElementById("quotaCallout");
-    if (peakTpm <= TIER1_TPM) {
-      const headroom = (1 - peakTpm / TIER1_TPM) * 100;
+    if (peakTpm <= tierTpm) {
+      const headroom = (1 - peakTpm / tierTpm) * 100;
       statusEl.className = "status-pill status-ok";
       statusEl.textContent = "No request needed";
       calloutEl.className = "callout ok";
-      calloutEl.innerHTML = `Peak load of <strong>${fmt(peakTpm)} TPM</strong> fits within the <strong>Tier&nbsp;1 default of ${fmt(TIER1_TPM)} TPM</strong> for ${modelLabel} (${fmt(headroom)}% headroom). The default ${TIER1_RPM} RPM is also sufficient for this workload. <strong>No quota request is required.</strong> Monitor if bursts exceed the ${peak.toFixed(1)}&times; peak assumption. See the <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">quotas &amp; limits</a> doc.`;
+      calloutEl.innerHTML = `Peak load of <strong>${fmt(peakTpm)} TPM</strong> fits within your <strong>Tier&nbsp;${tier} limit of ${fmt(tierTpm)} TPM</strong> for ${modelLabel} (${fmt(headroom)}% headroom). The ${fmt(tierRpm)} RPM tier limit is also sufficient for this workload. <strong>No quota request is required.</strong> Monitor if bursts exceed the ${peak.toFixed(1)}&times; peak assumption. See the <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">quotas &amp; limits</a> doc.`;
     } else {
+      const gap = recommended - tierTpm;
       statusEl.className = "status-pill status-warn";
       statusEl.textContent = "Request increase";
       calloutEl.className = "callout warn";
-      calloutEl.innerHTML = `Peak load of <strong>${fmt(peakTpm)} TPM</strong> exceeds the <strong>Tier&nbsp;1 default of ${fmt(TIER1_TPM)} TPM</strong>. <strong>Request ${fmt(recommended)} TPM</strong> (about ${fmt(recommended - TIER1_TPM)} TPM above the default) via the <a href="https://aka.ms/oai/stuquotarequest" target="_blank" rel="noopener">quota request form</a>. For latency-critical or high-volume voice workloads, also consider <strong>Provisioned Throughput (PTU)</strong>. See the <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">quotas &amp; limits</a> doc.`;
+      calloutEl.innerHTML = `Peak load of <strong>${fmt(peakTpm)} TPM</strong> exceeds your <strong>Tier&nbsp;${tier} limit of ${fmt(tierTpm)} TPM</strong>. <strong>Request ${fmt(recommended)} TPM</strong> (about <strong>${fmt(gap)} TPM</strong> above your current Tier&nbsp;${tier} limit) via the <a href="https://aka.ms/oai/stuquotarequest" target="_blank" rel="noopener">quota request form</a>. For latency-critical or high-volume voice workloads, also consider <strong>Provisioned Throughput (PTU)</strong>. See the <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">quotas &amp; limits</a> doc.`;
     }
 
     // Per-turn table — input grows as the full history is re-sent each turn
