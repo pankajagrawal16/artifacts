@@ -288,7 +288,7 @@
           <li>Speaking time is split between user and assistant per the ratio slider (default 50 / 50).</li>
           <li>Audio input tokens: <strong>10 tokens/second</strong> (1 token per 100&nbsp;ms).</li>
           <li>Audio output tokens: <strong>20 tokens/second</strong> (1 token per 50&nbsp;ms).</li>
-          <li>Previous-turn (history) tokens are cached per the <strong>Cache Hit Rate</strong> control (default 100%); any uncached share is billed at the full input rate.</li>
+          <li id="cacheAssumption">Previous-turn (history) tokens are cached per the <strong>Cache Hit Rate</strong> control; any uncached share is billed at the full input rate.</li>
           <li>Text output is estimated at <strong>~3 tokens/second</strong> of assistant speaking time.</li>
           <li>The system prompt (<code>instructions</code>) is re-sent as input on <strong>every turn</strong> &mdash; full rate on turn&nbsp;1, cached rate thereafter. Use the <strong>System Prompt Billing</strong> control to switch between this accurate view and an amortized &ldquo;counted once&rdquo; view. Audio and cached tokens both count toward the TPM quota on Standard deployments.</li>
         </ul>
@@ -398,6 +398,8 @@
     const r = (+document.getElementById("cacheRate").value || 0) / 100;
     document.getElementById("cacheRateVal").textContent = `${Math.round(r*100)}% cached`;
     document.getElementById("cacheRateUnc").textContent = `${Math.round((1-r)*100)}% at full rate`;
+    document.getElementById("cacheAssumption").innerHTML =
+      `Previous-turn (history) tokens are <strong>${Math.round(r*100)}% cached</strong> (per the Cache Hit Rate control); the remaining <strong>${Math.round((1-r)*100)}%</strong> is billed at the full input rate.`;
 
     const audioHist  = (uA + aA) * H;          // cacheable prior user + assistant audio
     const audioInUnc = T * uA + (1 - r) * audioHist;
