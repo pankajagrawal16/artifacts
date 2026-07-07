@@ -299,6 +299,7 @@
           <li id="ratioAssumption">Speaking time is split between user and assistant per the ratio slider.</li>
           <li>Audio input tokens: <strong>10 tokens/second</strong> (1 token per 100&nbsp;ms).</li>
           <li>Audio output tokens: <strong>20 tokens/second</strong> (1 token per 50&nbsp;ms).</li>
+          <li>Newly generated output (assistant audio and its transcript) is billed at the <strong>full input rate the first time it is re-sent</strong> as conversation history, then at the cached rate on later turns (cache write, then read).</li>
           <li id="cacheAssumption">Previous-turn (history) tokens are cached per the <strong>Cache Hit Rate</strong> control; any uncached share is billed at the full input rate.</li>
           <li>Text output is estimated at <strong>~3 tokens/second</strong> of assistant speaking time.</li>
           <li>The system prompt (<code>instructions</code>) is re-sent as input on <strong>every turn</strong> &mdash; full rate on turn&nbsp;1, cached rate thereafter. Use the <strong>System Prompt Billing</strong> control to switch between this accurate view and an amortized &ldquo;counted once&rdquo; view. Audio and cached tokens both count toward the TPM quota on Standard deployments.</li>
@@ -422,28 +423,33 @@
     document.getElementById("cacheAssumption").innerHTML =
       `Previous-turn (history) tokens are <strong>${Math.round(r*100)}% cached</strong> (per the Cache Hit Rate control); the remaining <strong>${Math.round((1-r)*100)}%</strong> is billed at the full input rate.`;
 
-    const audioHist  = (uA + aA) * H;          // cacheable prior user + assistant audio
-    const audioInUnc = T * uA + (1 - r) * audioHist;
-    const audioInCac = r * audioHist;
+    // Cache-lag model (matches the reference): the first time generated content is re-sent as
+    // input it is billed at the full rate (cache write); later turns are cached (cache read).
+    const H2 = (T - 1) * (T - 2) / 2;          // 2nd-and-later appearances of assistant/transcript items
+    const audioCacheable = uA * H + aA * H2;   // user-audio re-reads + assistant-audio 2nd+ re-reads
+    const audioFirst     = T * uA + (T - 1) * aA; // new user audio + assistant audio's first re-send
+    const audioInUnc = audioFirst + (1 - r) * audioCacheable;
+    const audioInCac = r * audioCacheable;
     const audioOut   = T * aA;
     const textOut    = T * aT;
 
     // System-prompt billing mode
     const billMode = document.getElementById("billMode").value;
     let textInUnc, textInCac, sysOnce = 0;
+    const transFirst     = (T - 1) * aT;       // assistant transcript's first re-send (full rate)
+    const transCacheable = aT * H2;            // transcript 2nd+ re-reads (cacheable)
     if (billMode === "once") {
       // Amortized: system prompt assumed cached across sessions, counted once (negligible per conversation)
-      const textHist = aT * H;                 // assistant transcript history only
-      textInUnc = (1 - r) * textHist;
-      textInCac = r * textHist;
+      textInUnc = transFirst + (1 - r) * transCacheable;
+      textInCac = r * transCacheable;
       sysOnce   = S;                           // one-time load for the whole month
       document.getElementById("billHint").textContent =
         "Instructions assumed cached across sessions and counted once. Matches the simplified reference calculator; understates cost for a large system prompt.";
     } else {
       // Accurate: instructions re-processed every turn (uncached turn 1, cached after)
-      const textHist = S * (T - 1) + aT * H;   // instructions (turns 2..T) + assistant transcripts
-      textInUnc = S + (1 - r) * textHist;
-      textInCac = r * textHist;
+      const textCacheable = S * (T - 1) + transCacheable;
+      textInUnc = S + transFirst + (1 - r) * textCacheable;
+      textInCac = r * textCacheable;
       document.getElementById("billHint").textContent =
         "Instructions re-processed each turn (full rate turn 1, cached after) \u2014 real Realtime billing. A large system prompt dominates cost.";
     }
