@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>gpt-realtime &mdash; Azure AI Foundry Quota Sizing</title>
+<title>gpt-realtime &mdash; Voice Cost &amp; Quota Calculator</title>
 <style>
   :root {
     --bg: #f5f4f8;
@@ -18,6 +18,8 @@
     --muted: #5f5d67;
     --highlight: #fbf6e9;
     --highlight-border: #f0e4c0;
+    --ok: #0e700e; --ok-bg: #eafbf0; --ok-line: #a7d8a0;
+    --warn: #8a5a00; --warn-bg: #fbf3e0; --warn-line: #efd8a0;
     --radius: 12px;
     --shadow: 0 2px 6px rgba(30,20,60,.06), 0 1px 2px rgba(30,20,60,.05);
     --shadow-lg: 0 8px 28px rgba(60,40,120,.10), 0 2px 6px rgba(30,20,60,.06);
@@ -32,21 +34,15 @@
       var(--bg);
     color: var(--text);
     margin: 0;
-    padding: 28px 20px 40px;
+    padding: 28px 20px 48px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
   .wrap { max-width: 1160px; margin: 0 auto; }
 
-  /* Foundry-style masthead with mesh gradient */
   .masthead {
-    position: relative;
-    overflow: hidden;
-    color: #fff;
-    border-radius: 16px;
-    padding: 30px 34px;
-    box-shadow: var(--shadow-lg);
-    margin-bottom: 26px;
+    position: relative; overflow: hidden; color: #fff;
+    border-radius: 16px; padding: 30px 34px; box-shadow: var(--shadow-lg); margin-bottom: 26px;
     background:
       radial-gradient(circle at 12% 18%, rgba(233,64,166,.60), transparent 42%),
       radial-gradient(circle at 82% 8%, rgba(79,111,255,.65), transparent 50%),
@@ -55,137 +51,93 @@
   }
   .masthead::after {
     content: ""; position: absolute; inset: 0;
-    background: radial-gradient(120% 120% at 100% 0%, transparent 60%, rgba(0,0,0,.12));
-    pointer-events: none;
+    background: radial-gradient(120% 120% at 100% 0%, transparent 60%, rgba(0,0,0,.12)); pointer-events: none;
   }
   .brand { display: flex; align-items: center; gap: 14px; position: relative; z-index: 1; }
-  .brand-mark {
-    width: 40px; height: 40px; flex: 0 0 40px;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,.25));
-  }
-  .brand-text .eyebrow {
-    font-size: 11.5px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase;
-    opacity: .9; margin: 0 0 2px;
-  }
+  .brand-mark { width: 40px; height: 40px; flex: 0 0 40px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); }
+  .brand-text .eyebrow { font-size: 11.5px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; opacity: .9; margin: 0 0 2px; }
   .masthead h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.2px; position: relative; z-index: 1; }
-  .masthead p { margin: 8px 0 0; opacity: .94; font-size: 14px; max-width: 640px; position: relative; z-index: 1; }
+  .masthead p { margin: 8px 0 0; opacity: .94; font-size: 14px; max-width: 720px; position: relative; z-index: 1; }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; position: relative; z-index: 1; }
-  .chip {
-    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28);
-    border-radius: 999px; padding: 3px 12px; font-size: 12px; font-weight: 600;
-    backdrop-filter: blur(4px);
-  }
+  .chip { background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); border-radius: 999px; padding: 3px 12px; font-size: 12px; font-weight: 600; backdrop-filter: blur(4px); }
 
-  .grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    box-shadow: var(--shadow);
-  }
-  .panel h2 {
-    margin: 0 0 16px; font-size: 12px; text-transform: uppercase; letter-spacing: .6px;
-    color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px;
-  }
-  .panel h2::before {
-    content: ""; width: 14px; height: 14px; border-radius: 4px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  }
+  .grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
+  .panel h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+  .panel h2 .ic { width: 18px; height: 18px; color: var(--accent); }
+  .panel .sub { margin: 0 0 16px; font-size: 12.5px; color: var(--muted); }
+
   label { display: block; font-size: 12px; font-weight: 600; margin: 15px 0 5px; color: #33313a; }
-  label:first-of-type { margin-top: 0; }
-  input[type="number"] {
-    width: 100%; padding: 9px 11px; border: 1px solid var(--line);
-    border-radius: 8px; font-size: 14px; font-family: inherit; color: var(--text);
-    background: #fdfdff; transition: border-color .15s, box-shadow .15s;
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .two label { margin-top: 15px; }
+  input[type="number"], select {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 14px; font-family: inherit; color: var(--text); background: #fdfdff; transition: border-color .15s, box-shadow .15s;
   }
-  input[type="number"]:hover { border-color: #c8c4d4; }
-  input[type="number"]:focus, input[type="range"]:focus {
-    outline: none; border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(110,59,245,.18);
-  }
-  input[type="range"] { width: 100%; accent-color: var(--accent); }
-  select {
-    width: 100%; padding: 9px 11px; border: 1px solid var(--line);
-    border-radius: 8px; font-size: 14px; font-family: inherit; color: var(--text);
-    background: #fdfdff; cursor: pointer; transition: border-color .15s, box-shadow .15s;
-  }
-  select:hover { border-color: #c8c4d4; }
-  select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(110,59,245,.18); }
-  .sub-head {
-    margin: 22px 0 8px; padding-top: 16px; border-top: 1px solid var(--border);
-    font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 700;
-  }
-  .price-grid {
-    border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fdfdff;
-  }
-  .price-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--border);
-  }
-  .price-row:last-child { border-bottom: none; }
-  .price-row span:first-child { color: var(--muted); font-weight: 600; }
-  .price-row span:last-child { font-weight: 700; font-variant-numeric: tabular-nums; color: #33313a; }
+  select { cursor: pointer; }
+  input[type="number"]:hover, select:hover { border-color: #c8c4d4; }
+  input[type="number"]:focus, select:focus, input[type="range"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(110,59,245,.18); }
+  input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 6px; }
+  .range-legend { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-top: 4px; }
   .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
-  .toggle-row { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; }
-  .toggle-row label { margin: 0; }
-  input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
 
-  /* KPI band */
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 14px; margin-bottom: 22px; }
-  @media (max-width: 620px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
-  .kpi-card {
-    position: relative; overflow: hidden;
-    background: linear-gradient(180deg, #ffffff, var(--accent-soft));
-    border: 1px solid var(--accent-line); border-radius: var(--radius); padding: 15px 16px;
-  }
-  .kpi-card::before {
-    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, #e940a6, #6E3BF5, #0f6cbd, #12b5c9);
-  }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+  .kpi-card { position: relative; overflow: hidden; background: linear-gradient(180deg, #ffffff, var(--accent-soft)); border: 1px solid var(--accent-line); border-radius: var(--radius); padding: 15px 16px; }
+  .kpi-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #e940a6, #6E3BF5, #0f6cbd, #12b5c9); }
   .kpi-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; }
-  .kpi-card .value {
-    font-size: 25px; font-weight: 700; margin-top: 5px; letter-spacing: -.5px;
-    background: linear-gradient(120deg, #5a2bd6, #0f6cbd); -webkit-background-clip: text;
-    background-clip: text; color: transparent;
-  }
-  .kpi-card .unit { font-size: 13px; font-weight: 600; color: var(--muted); -webkit-text-fill-color: var(--muted); }
+  .kpi-card .value { font-size: 26px; font-weight: 700; margin-top: 5px; letter-spacing: -.5px; background: linear-gradient(120deg, #5a2bd6, #0f6cbd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .kpi-card .value .unit { font-size: 13px; font-weight: 600; color: var(--muted); -webkit-text-fill-color: var(--muted); }
 
-  .doc { font-size: 14px; }
-  .doc h3 {
-    font-size: 14.5px; margin: 26px 0 10px; color: var(--text); font-weight: 600;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .doc h3 .idx {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px; border-radius: 7px; font-size: 12px; font-weight: 700; color: #fff;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  }
-  .doc h3:first-child { margin-top: 0; }
-  table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; margin: 8px 0 4px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
   td, th { border-bottom: 1px solid var(--line); padding: 9px 13px; text-align: left; }
   tr:last-child td { border-bottom: none; }
-  th { background: #faf9fc; font-weight: 600; color: var(--muted); }
+  th { background: #faf9fc; font-weight: 600; color: var(--muted); font-size: 12px; }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   tr.total td { background: var(--accent-soft); font-weight: 700; color: #3a1f9e; }
-  .formula {
-    background: #faf9fc; border: 1px solid var(--border); border-left: 3px solid var(--accent);
-    border-radius: 8px; padding: 11px 15px; font-family: "Cascadia Code", Consolas, "SF Mono", monospace;
-    font-size: 13px; margin: 8px 0; color: #33313a;
-  }
-  .assumptions {
-    background: var(--highlight); border: 1px solid var(--highlight-border);
-    border-radius: 10px; padding: 13px 16px; margin-top: 20px; font-size: 13px;
-  }
-  ul.rec { margin: 6px 0; padding-left: 20px; }
-  ul.rec li { margin: 5px 0; }
-  .footer { margin-top: 24px; font-size: 12px; color: var(--muted); text-align: center; }
-  .pill {
-    display: inline-block; background: linear-gradient(135deg, #eafbf0, #ddf6e6);
-    border: 1px solid #a7d8a0; color: #0e700e;
-    border-radius: 999px; padding: 2px 11px; font-size: 12px; font-weight: 700;
-  }
+  tr.audio td:first-child::before, tr.text td:first-child::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 3px; margin-right: 8px; vertical-align: middle; }
+  tr.audio td:first-child::before { background: #6E3BF5; }
+  tr.text td:first-child::before { background: #12b5c9; }
+
+  .section { margin-top: 30px; }
+  .section h2 { font-size: 18px; font-weight: 600; margin: 0 0 6px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .section .lead { font-size: 14px; color: #33313a; margin: 12px 0; }
+
+  /* Quota recommendation card */
+  .quota-card { border: 1px solid var(--accent-line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .quota-head { padding: 16px 20px; color: #fff; background: linear-gradient(120deg, #5a2bd6, #0f6cbd); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .quota-head h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .status-pill { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+  .status-ok { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok-line); }
+  .status-warn { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-line); }
+  .quota-body { background: var(--panel); padding: 4px 20px 18px; }
+  .quota-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 12px 0 6px; }
+  @media (max-width: 620px) { .quota-metrics { grid-template-columns: repeat(2, 1fr); } }
+  .qm { padding: 12px 8px; text-align: center; border-right: 1px solid var(--border); }
+  .qm:last-child { border-right: none; }
+  .qm .l { font-size: 10.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); font-weight: 600; }
+  .qm .v { font-size: 20px; font-weight: 700; margin-top: 4px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .qm .v.big { color: #3a1f9e; }
+  .callout { border-radius: 8px; padding: 12px 15px; font-size: 13px; margin-top: 8px; }
+  .callout.ok { background: var(--ok-bg); border: 1px solid var(--ok-line); }
+  .callout.warn { background: var(--warn-bg); border: 1px solid var(--warn-line); }
+  .callout a, .doc-link { color: var(--accent); font-weight: 600; }
+
+  .assump { background: var(--highlight); border: 1px solid var(--highlight-border); border-radius: 10px; padding: 14px 18px; margin-top: 14px; }
+  .assump h4 { margin: 0 0 8px; font-size: 13px; }
+  .assump ul { margin: 0; padding-left: 20px; font-size: 13px; }
+  .assump li { margin: 4px 0; }
+
+  .price-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  @media (max-width: 760px) { .price-cards { grid-template-columns: 1fr; } }
+  .price-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); background: var(--panel); }
+  .price-card h4 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+
+  .disclaimer { display: flex; gap: 12px; align-items: flex-start; background: #faf9fc; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-top: 20px; font-size: 13px; color: var(--muted); }
+  .disclaimer .ic { flex: 0 0 18px; color: var(--accent); margin-top: 1px; }
+
+  .footer { margin-top: 26px; font-size: 12px; color: var(--muted); text-align: center; }
+  .footer a { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -195,220 +147,311 @@
         <svg class="brand-mark" viewBox="0 0 48 48" role="img" aria-label="Azure AI Foundry">
           <defs>
             <linearGradient id="fdry" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#e940a6"/>
-              <stop offset=".45" stop-color="#7b3ff2"/>
-              <stop offset="1" stop-color="#12b5c9"/>
+              <stop offset="0" stop-color="#e940a6"/><stop offset=".45" stop-color="#7b3ff2"/><stop offset="1" stop-color="#12b5c9"/>
             </linearGradient>
           </defs>
           <path fill="url(#fdry)" d="M24 3.5 41.7 13.75v20.5L24 44.5 6.3 34.25v-20.5z"/>
           <path fill="#ffffff" fill-opacity=".92" d="M24 13.2 33.3 18.6v10.8L24 34.8l-9.3-5.4V18.6z"/>
           <path fill="url(#fdry)" d="M24 19.1 28.2 21.5v4.9L24 28.9l-4.2-2.5v-4.9z"/>
         </svg>
-        <div class="brand-text">
-          <p class="eyebrow">Azure AI Foundry</p>
-        </div>
+        <div class="brand-text"><p class="eyebrow">Azure AI Foundry</p></div>
       </div>
-      <h1>gpt-realtime &mdash; Quota &amp; Cost Sizing</h1>
-      <p>Interactive capacity and cost model for provisioning throughput. Pick a model, adjust the parameters on the left, and the analysis updates in real time.</p>
+      <h1>gpt-realtime &mdash; Voice Cost &amp; Quota Calculator</h1>
+      <p>Estimate the cost and quota (TPM) needed for gpt-realtime-1.5 and gpt-realtime-mini on Azure, based on your expected conversation volume, duration, and turn count.</p>
       <div class="chips">
-        <span class="chip">gpt-realtime</span>
         <span class="chip">gpt-realtime-1.5</span>
         <span class="chip">gpt-realtime-mini</span>
-        <span class="chip">TPM &amp; RPM planning</span>
-        <span class="chip">Cost estimate</span>
+        <span class="chip">Audio + Text</span>
+        <span class="chip">Quota recommendation</span>
       </div>
     </div>
 
     <div class="grid">
-      <!-- Controls -->
+      <!-- Parameters -->
       <div class="panel">
-        <h2>Parameters</h2>
+        <h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>Conversation Parameters</h2>
+        <p class="sub">Enter your expected usage.</p>
 
         <label>Model</label>
         <select id="model">
-          <option value="gpt-realtime">gpt-realtime</option>
           <option value="gpt-realtime-1.5" selected>gpt-realtime-1.5</option>
+          <option value="gpt-realtime">gpt-realtime</option>
           <option value="gpt-realtime-mini">gpt-realtime-mini</option>
         </select>
-        <div class="hint">Selecting a model presets the pricing below (Global Standard rates).</div>
 
-        <label>Baseline conversations</label>
-        <input type="number" id="baseConv" value="434" min="1">
+        <div class="two">
+          <div>
+            <label>Conversations per Month</label>
+            <input type="number" id="convs" value="9297" min="0">
+          </div>
+          <div>
+            <label>Avg. Duration (minutes)</label>
+            <input type="number" id="duration" value="2" min="0" step="0.1">
+          </div>
+        </div>
 
-        <label>Target conversations</label>
-        <input type="number" id="targetConv" value="9297" min="1">
+        <div class="two">
+          <div>
+            <label>Avg. Turns per Conversation</label>
+            <input type="number" id="turns" value="7" min="1">
+          </div>
+          <div>
+            <label>System Prompt Length (tokens)</label>
+            <input type="number" id="sysPrompt" value="30278" min="0">
+          </div>
+        </div>
 
-        <label>Total input tokens &mdash; incl. system prompt</label>
-        <input type="number" id="inputTotal" value="94491515" min="0">
-        <div class="hint">Total prompt tokens for the month &mdash; already includes the system prompt and cached tokens.</div>
+        <label>User Input / Assistant Output Ratio</label>
+        <input type="range" id="ratio" min="10" max="90" step="1" value="50">
+        <div class="range-legend">
+          <span id="ratioLeft">50% User Input</span>
+          <span id="ratioRight">50% Assistant Output</span>
+        </div>
 
-        <label>&mdash; of which cached</label>
-        <input type="number" id="cachedIn" value="70415700" min="0">
-        <div class="hint">Subset of the input above that was served from the prompt cache.</div>
-
-        <label>Assistant output tokens</label>
-        <input type="number" id="output" value="3227020" min="0">
-
-        <label>Days in month</label>
-        <input type="number" id="days" value="30" min="1" max="31">
-
-        <label>Peak factor (&times; over average)</label>
+        <label>Peak Factor (&times; over average) &mdash; for quota sizing</label>
         <input type="range" id="peak" min="1" max="5" step="0.1" value="1.6">
-        <div class="hint">Peak factor: <strong id="peakVal">1.6</strong>&times; &mdash; accounts for traffic concentrated in busy hours.</div>
-
-        <div class="toggle-row">
-          <input type="checkbox" id="countCached" checked>
-          <label for="countCached">Count cached tokens toward quota</label>
-        </div>
-        <div class="hint">On = Standard deployment (cached tokens count toward TPM). Off = PTU (cached 100% deducted).</div>
-
-        <div class="sub-head">Pricing &mdash; text tokens, per 1M</div>
-        <div class="price-grid">
-          <div class="price-row"><span>Input (uncached)</span><span id="priceInDisp">&mdash;</span></div>
-          <div class="price-row"><span>Cached input</span><span id="priceCachedDisp">&mdash;</span></div>
-          <div class="price-row"><span>Output</span><span id="priceOutDisp">&mdash;</span></div>
-        </div>
-        <div class="hint">Rates are set automatically by the selected model (Global Standard) and applied to the token volumes above. Audio tokens, if present, are billed separately.</div>
+        <div class="hint">Peak factor: <strong id="peakVal">1.6</strong>&times; &mdash; headroom for busy-hour concurrency and retries.</div>
       </div>
 
-      <!-- Report -->
+      <!-- Cost -->
       <div class="panel">
-        <div class="kpis" id="kpis"></div>
-        <div class="doc" id="doc"></div>
+        <h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Estimated Cost</h2>
+        <p class="sub" id="costSub"></p>
+        <table>
+          <thead>
+            <tr><th>Category</th><th class="num">Price / M Tokens</th><th class="num">Tokens / Month (M)</th><th class="num">Cost / Month</th></tr>
+          </thead>
+          <tbody id="costBody"></tbody>
+        </table>
+        <div class="kpis">
+          <div class="kpi-card"><div class="label">Per Conversation</div><div class="value" id="kpiPerConv">&mdash;</div></div>
+          <div class="kpi-card"><div class="label">Estimated Monthly Total</div><div class="value" id="kpiMonthly">&mdash;</div></div>
+        </div>
       </div>
     </div>
 
-    <div class="footer">Prepared for capacity planning discussion &middot; figures are estimates based on the parameters shown above.</div>
+    <!-- Recommended quota request -->
+    <div class="section">
+      <h2>Recommended Quota Request</h2>
+      <p class="lead">Realtime deployments are rate-limited by <strong>Tokens Per Minute (TPM)</strong>. Audio and cached tokens both count toward the limit on Standard / Global&nbsp;Standard deployments. Size quota on peak load, not average.</p>
+      <div class="quota-card">
+        <div class="quota-head">
+          <h3 id="quotaModelLabel">gpt-realtime-1.5 &middot; Global Standard</h3>
+          <span class="status-pill" id="quotaStatus">&mdash;</span>
+        </div>
+        <div class="quota-body">
+          <div class="quota-metrics">
+            <div class="qm"><div class="l">Avg Load</div><div class="v" id="qmAvg">&mdash;</div></div>
+            <div class="qm"><div class="l">Peak Load (<span id="qmPeakX">1.6</span>&times;)</div><div class="v" id="qmPeak">&mdash;</div></div>
+            <div class="qm"><div class="l">Recommended Request</div><div class="v big" id="qmRec">&mdash;</div></div>
+            <div class="qm"><div class="l">Tier 1 Default</div><div class="v" id="qmTier">100,000</div></div>
+          </div>
+          <div id="quotaCallout"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Per-turn breakdown -->
+    <div class="section">
+      <h2>Tokens Consumed per Turn</h2>
+      <p class="lead">Each turn sends the full conversation history as input. New content is billed at the input rate; previously seen content is billed at the cheaper cached rate.</p>
+      <table>
+        <thead>
+          <tr><th>Turn</th><th class="num">Input (text)</th><th class="num">Input (audio)</th><th class="num">Input total</th><th class="num">Output</th></tr>
+        </thead>
+        <tbody id="turnBody"></tbody>
+      </table>
+    </div>
+
+    <!-- How it works -->
+    <div class="section">
+      <h2>How the Calculation Works</h2>
+      <p class="lead">The Realtime API charges per token across audio and text modalities. Costs accumulate with each <strong>turn</strong> in a conversation because the entire conversation history is sent as input for every response. Prompt caching reduces cost for previously seen tokens.</p>
+      <div class="assump">
+        <h4>Assumptions</h4>
+        <ul>
+          <li>Speaking time is split between user and assistant per the ratio slider (default 50 / 50).</li>
+          <li>Audio input tokens: <strong>10 tokens/second</strong> (1 token per 100&nbsp;ms).</li>
+          <li>Audio output tokens: <strong>20 tokens/second</strong> (1 token per 50&nbsp;ms).</li>
+          <li>Messages from previous turns are assumed to be fully cached.</li>
+          <li>Text output is estimated at <strong>~3 tokens/second</strong> of assistant speaking time.</li>
+          <li>The system prompt (<code>instructions</code>) is re-sent as input on <strong>every turn</strong> &mdash; full rate on turn&nbsp;1, cached rate thereafter &mdash; so a large system prompt is a major cost and quota driver. Audio and cached tokens both count toward the TPM quota on Standard deployments.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Pricing -->
+    <div class="section">
+      <h2>Pricing (Azure)</h2>
+      <p class="lead">Prices per 1M tokens (Global Standard).</p>
+      <div class="price-cards">
+        <div class="price-card">
+          <h4>gpt-realtime-1.5</h4>
+          <table>
+            <thead><tr><th>Modality</th><th class="num">Input</th><th class="num">Cached Input</th><th class="num">Output</th></tr></thead>
+            <tbody>
+              <tr><td>Audio</td><td class="num">$32.00</td><td class="num">$0.40</td><td class="num">$64.00</td></tr>
+              <tr><td>Text</td><td class="num">$4.00</td><td class="num">$0.40</td><td class="num">$16.00</td></tr>
+              <tr><td>Image</td><td class="num">$5.00</td><td class="num">$0.50</td><td class="num">&mdash;</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="price-card">
+          <h4>gpt-realtime-mini</h4>
+          <table>
+            <thead><tr><th>Modality</th><th class="num">Input</th><th class="num">Cached Input</th><th class="num">Output</th></tr></thead>
+            <tbody>
+              <tr><td>Audio</td><td class="num">$10.00</td><td class="num">$0.30</td><td class="num">$20.00</td></tr>
+              <tr><td>Text</td><td class="num">$0.60</td><td class="num">$0.06</td><td class="num">$2.40</td></tr>
+              <tr><td>Image</td><td class="num">$0.80</td><td class="num">$0.08</td><td class="num">&mdash;</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="disclaimer">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <div><strong>Disclaimer.</strong> This calculator provides rough estimates based on simplified assumptions. Actual cost and quota depend on conversation dynamics, voice-activity-detection behavior, caching efficiency, and token overhead. Confirm limits for your region and deployment in the <a class="doc-link" href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">Azure Foundry quotas &amp; limits</a> documentation.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Prepared for capacity planning &middot; figures are estimates. See the
+      <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">Azure OpenAI in Foundry quotas &amp; limits</a> for authoritative TPM/RPM limits per model, tier, and region.
+    </div>
   </div>
 
 <script>
+  // Global Standard pricing, per 1M tokens
   const MODELS = {
-    "gpt-realtime":     { textIn: 4, textCached: 0.40, textOut: 16 },
-    "gpt-realtime-1.5": { textIn: 4, textCached: 0.40, textOut: 16 },
-    "gpt-realtime-mini": { textIn: 0.60, textCached: 0.06, textOut: 2.40 },
+    "gpt-realtime":     { audioIn: 32,  audioCached: 0.40, audioOut: 64, textIn: 4,    textCached: 0.40, textOut: 16 },
+    "gpt-realtime-1.5": { audioIn: 32,  audioCached: 0.40, audioOut: 64, textIn: 4,    textCached: 0.40, textOut: 16 },
+    "gpt-realtime-mini":{ audioIn: 10,  audioCached: 0.30, audioOut: 20, textIn: 0.60, textCached: 0.06, textOut: 2.40 },
   };
+  // Tier 1 Global Standard limit for the gpt-realtime family
+  const TIER1_TPM = 100000;
+  const TIER1_RPM = 200;
 
-  const ids = ["baseConv","targetConv","inputTotal","cachedIn","output","days","peak","countCached"];
-  ids.forEach(id => document.getElementById(id).addEventListener("input", render));
-  document.getElementById("model").addEventListener("change", render);
+  // Tokenization assumptions
+  const AUDIO_IN_TPS  = 10;   // user audio: 10 tokens / second
+  const AUDIO_OUT_TPS = 20;   // assistant audio: 20 tokens / second
+  const TEXT_OUT_TPS  = 3;    // assistant transcript: ~3 tokens / second
+  const MIN_PER_MONTH = 30 * 24 * 60; // 43,200
+
+  const ids = ["model","convs","duration","turns","sysPrompt","ratio","peak"];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener(el.tagName === "SELECT" ? "change" : "input", render);
+  });
 
   const fmt = n => Math.round(n).toLocaleString("en-US");
   const money = n => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const millions = n => (n / 1e6).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const ceilTo = (v, s) => Math.ceil(v / s) * s;
 
   function render() {
-    const baseConv    = +document.getElementById("baseConv").value || 0;
-    const targetConv  = +document.getElementById("targetConv").value || 0;
-    const inputTotal  = +document.getElementById("inputTotal").value || 0;
-    const cachedIn    = Math.min(+document.getElementById("cachedIn").value || 0, inputTotal);
-    const output      = +document.getElementById("output").value || 0;
-    const days        = +document.getElementById("days").value || 30;
-    const peak        = +document.getElementById("peak").value || 1;
-    const countCached = document.getElementById("countCached").checked;
-    const modelSel    = document.getElementById("model");
-    const modelLabel  = modelSel.options[modelSel.selectedIndex].text;
-    const model       = MODELS[modelSel.value] || { textIn: 0, textCached: 0, textOut: 0 };
-    const priceIn     = model.textIn;
-    const priceCached = model.textCached;
-    const priceOut    = model.textOut;
+    const m = MODELS[document.getElementById("model").value];
+    const modelLabel = document.getElementById("model").options[document.getElementById("model").selectedIndex].text;
+    const C   = +document.getElementById("convs").value || 0;
+    const D   = +document.getElementById("duration").value || 0;
+    const T   = Math.max(1, +document.getElementById("turns").value || 1);
+    const S   = +document.getElementById("sysPrompt").value || 0;
+    const userShare = (+document.getElementById("ratio").value || 50) / 100;
+    const asstShare = 1 - userShare;
+    const peak = +document.getElementById("peak").value || 1;
 
-    // Show the model's rates in the read-only pricing panel
-    document.getElementById("priceInDisp").textContent = money(priceIn);
-    document.getElementById("priceCachedDisp").textContent = money(priceCached);
-    document.getElementById("priceOutDisp").textContent = money(priceOut);
+    // Per-turn speaking time and tokens
+    const secPerTurn = T ? (D * 60) / T : 0;
+    const userSec = secPerTurn * userShare;
+    const asstSec = secPerTurn * asstShare;
+    const uA = userSec * AUDIO_IN_TPS;   // new user audio tokens / turn (input)
+    const aA = asstSec * AUDIO_OUT_TPS;  // assistant audio tokens / turn (output)
+    const aT = asstSec * TEXT_OUT_TPS;   // assistant text tokens / turn (output)
 
+    // Update ratio + peak labels
+    document.getElementById("ratioLeft").textContent  = `${Math.round(userShare*100)}% User Input (${userSec.toFixed(0)}s)`;
+    document.getElementById("ratioRight").textContent = `${Math.round(asstShare*100)}% Assistant Output (${asstSec.toFixed(0)}s)`;
     document.getElementById("peakVal").textContent = peak.toFixed(1);
+    document.getElementById("qmPeakX").textContent = peak.toFixed(1);
 
-    const scale = baseConv ? targetConv / baseConv : 0;
-    const pInput     = inputTotal * scale;
-    const pCached    = cachedIn * scale;
-    const pNonCached = Math.max(0, pInput - pCached);
-    const pOut       = output * scale;
-    const quotaCached = countCached ? pCached : 0;
-    const total = pNonCached + quotaCached + pOut;
+    // Per-conversation token totals.
+    // Every turn re-sends the full conversation history as input; everything seen on a
+    // previous turn is cached. New content on turn i is only the user's new audio.
+    // Instructions (system prompt) are re-sent each turn: full rate on turn 1, cached after.
+    const H = T * (T - 1) / 2; // total cached appearances of each per-turn item across the conversation
+    const audioInUnc = T * uA;                 // new user audio, once per turn
+    const audioInCac = (uA + aA) * H;          // all prior user + assistant audio, cached
+    const audioOut   = T * aA;
+    const textInUnc  = S;                       // instructions on turn 1 (full input rate)
+    const textInCac  = S * (T - 1) + aT * H;    // instructions cached on later turns + assistant transcripts
+    const textOut    = T * aT;
 
-    const minutes = days * 24 * 60;
-    const avgTpm = minutes ? total / minutes : 0;
+    // Monthly token totals
+    const monthly = {
+      audioInUnc: audioInUnc * C,
+      audioInCac: audioInCac * C,
+      audioOut:   audioOut   * C,
+      textInUnc:  textInUnc  * C,
+      textInCac:  textInCac  * C,
+      textOut:    textOut    * C,
+    };
+
+    const rows = [
+      { key: "Audio Input",         cls: "audio", price: m.audioIn,     tok: monthly.audioInUnc },
+      { key: "Audio Input (cached)",cls: "audio", price: m.audioCached, tok: monthly.audioInCac },
+      { key: "Audio Output",        cls: "audio", price: m.audioOut,    tok: monthly.audioOut },
+      { key: "Text Input",          cls: "text",  price: m.textIn,      tok: monthly.textInUnc },
+      { key: "Text Input (cached)", cls: "text",  price: m.textCached,  tok: monthly.textInCac },
+      { key: "Text Output",         cls: "text",  price: m.textOut,     tok: monthly.textOut },
+    ];
+
+    let totalCost = 0, totalTokens = 0, html = "";
+    rows.forEach(r => {
+      const cost = r.tok / 1e6 * r.price;
+      totalCost += cost; totalTokens += r.tok;
+      html += `<tr class="${r.cls}"><td>${r.key}</td><td class="num">${money(r.price)}</td><td class="num">${millions(r.tok)}</td><td class="num">${money(cost)}</td></tr>`;
+    });
+    html += `<tr class="total"><td>Total</td><td class="num"></td><td class="num">${millions(totalTokens)}</td><td class="num">${money(totalCost)}</td></tr>`;
+    document.getElementById("costBody").innerHTML = html;
+
+    document.getElementById("costSub").textContent =
+      `Based on ${fmt(C)} conversations/month, ${D} min each, ${T} turns.`;
+    document.getElementById("kpiPerConv").textContent = C ? money(totalCost / C) : "$0.00";
+    document.getElementById("kpiMonthly").textContent = money(totalCost);
+
+    // Quota (TPM)
+    const avgTpm = totalTokens / MIN_PER_MONTH;
     const peakTpm = avgTpm * peak;
-    const minReq = ceilTo(avgTpm, 10000);
-    const safeReq = ceilTo(peakTpm, 10000);
+    const recommended = ceilTo(peakTpm, 10000);
+    document.getElementById("qmAvg").textContent  = fmt(avgTpm);
+    document.getElementById("qmPeak").textContent = fmt(peakTpm);
+    document.getElementById("qmRec").textContent  = fmt(recommended) + " TPM";
+    document.getElementById("qmTier").textContent = fmt(TIER1_TPM);
+    document.getElementById("quotaModelLabel").textContent = `${modelLabel} \u00b7 Global Standard`;
 
-    const nonCachedIn = Math.max(0, inputTotal - cachedIn);
-    const cacheRate = inputTotal ? cachedIn / inputTotal : 0;
+    const statusEl = document.getElementById("quotaStatus");
+    const calloutEl = document.getElementById("quotaCallout");
+    if (peakTpm <= TIER1_TPM) {
+      const headroom = (1 - peakTpm / TIER1_TPM) * 100;
+      statusEl.className = "status-pill status-ok";
+      statusEl.textContent = "No request needed";
+      calloutEl.className = "callout ok";
+      calloutEl.innerHTML = `Peak load of <strong>${fmt(peakTpm)} TPM</strong> fits within the <strong>Tier&nbsp;1 default of ${fmt(TIER1_TPM)} TPM</strong> for ${modelLabel} (${fmt(headroom)}% headroom). The default ${TIER1_RPM} RPM is also sufficient for this workload. <strong>No quota request is required.</strong> Monitor if bursts exceed the ${peak.toFixed(1)}&times; peak assumption. See the <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">quotas &amp; limits</a> doc.`;
+    } else {
+      statusEl.className = "status-pill status-warn";
+      statusEl.textContent = "Request increase";
+      calloutEl.className = "callout warn";
+      calloutEl.innerHTML = `Peak load of <strong>${fmt(peakTpm)} TPM</strong> exceeds the <strong>Tier&nbsp;1 default of ${fmt(TIER1_TPM)} TPM</strong>. <strong>Request ${fmt(recommended)} TPM</strong> (about ${fmt(recommended - TIER1_TPM)} TPM above the default) via the <a href="https://aka.ms/oai/stuquotarequest" target="_blank" rel="noopener">quota request form</a>. For latency-critical or high-volume voice workloads, also consider <strong>Provisioned Throughput (PTU)</strong>. See the <a href="https://learn.microsoft.com/en-us/azure/foundry/openai/quotas-limits" target="_blank" rel="noopener">quotas &amp; limits</a> doc.`;
+    }
 
-    // Cost (billing) — cached tokens are always billed (at the cached rate),
-    // independent of whether they count toward the TPM quota.
-    const costNonCached = pNonCached / 1e6 * priceIn;
-    const costCached    = pCached    / 1e6 * priceCached;
-    const costOut       = pOut       / 1e6 * priceOut;
-    const costTotal     = costNonCached + costCached + costOut;
-    const costPer1k     = targetConv ? costTotal / targetConv * 1000 : 0;
-
-    // KPI cards
-    document.getElementById("kpis").innerHTML = `
-      <div class="kpi-card"><div class="label">Total tokens / month</div><div class="value">${(total/1e9).toFixed(2)}<span class="unit"> B</span></div></div>
-      <div class="kpi-card"><div class="label">Average load</div><div class="value">${fmt(avgTpm)}<span class="unit"> TPM</span></div></div>
-      <div class="kpi-card"><div class="label">Peak load (${peak.toFixed(1)}&times;)</div><div class="value">${fmt(peakTpm)}<span class="unit"> TPM</span></div></div>
-      <div class="kpi-card"><div class="label">Recommended request</div><div class="value">${fmt(safeReq)}<span class="unit"> TPM</span></div></div>
-      <div class="kpi-card"><div class="label">Est. monthly cost</div><div class="value">${money(costTotal)}</div></div>
-    `;
-
-    const cachedNote = countCached
-      ? "For <strong>Standard / Global Standard</strong> deployments, cached tokens still count toward the TPM rate limit. Caching provides a <strong>billing discount only</strong>, not a quota discount &mdash; so quota is sized on <strong>total token consumption, including cached tokens</strong>."
-      : "This models a <strong>PTU (Provisioned)</strong> deployment, where cached tokens are <strong>100% deducted from utilization</strong> and excluded from the quota basis.";
-
-    document.getElementById("doc").innerHTML = `
-      <h3><span class="idx">1</span>Baseline data</h3>
-      <table>
-        <tr><td>Conversations</td><td class="num">${fmt(baseConv)}</td></tr>
-        <tr><td>Total input tokens (incl. system prompt)</td><td class="num">${fmt(inputTotal)}</td></tr>
-        <tr><td>&mdash; of which cached</td><td class="num">${fmt(cachedIn)}</td></tr>
-        <tr><td>&mdash; non-cached input</td><td class="num">${fmt(nonCachedIn)}</td></tr>
-        <tr><td>Assistant output tokens</td><td class="num">${fmt(output)}</td></tr>
-        <tr><td>Cache rate of input</td><td class="num">${(cacheRate*100).toFixed(1)}%</td></tr>
-      </table>
-
-      <h3><span class="idx">2</span>Projected growth</h3>
-      <p>Target volume is <strong>${fmt(targetConv)}</strong> conversations.</p>
-      <div class="formula">scale = ${fmt(targetConv)} &divide; ${fmt(baseConv)} = ${scale.toFixed(2)}&times;</div>
-
-      <h3><span class="idx">3</span>Projected token consumption</h3>
-      <table>
-        <tr><th>Category</th><th class="num">Projected Tokens</th></tr>
-        <tr><td>Non-cached input (incl. system)</td><td class="num">~${fmt(pNonCached)}</td></tr>
-        <tr><td>Cached input${countCached ? "" : " &mdash; excluded (PTU)"}</td><td class="num">~${fmt(pCached)}</td></tr>
-        <tr><td>Assistant output</td><td class="num">~${fmt(pOut)}</td></tr>
-        <tr class="total"><td>Total counted toward quota</td><td class="num">~${fmt(total)}</td></tr>
-      </table>
-
-      <h3><span class="idx">4</span>Converting to Tokens Per Minute</h3>
-      <div class="formula">minutes = ${days} &times; 24 &times; 60 = ${fmt(minutes)}<br>
-      average TPM = ${fmt(total)} &divide; ${fmt(minutes)} &asymp; ${fmt(avgTpm)}<br>
-      peak TPM = ${fmt(avgTpm)} &times; ${peak.toFixed(1)} &asymp; ${fmt(peakTpm)}</div>
-
-      <h3><span class="idx">5</span>Note on caching</h3>
-      <p>${cachedNote}</p>
-
-      <h3><span class="idx">6</span>Estimated cost (text tokens)</h3>
-      <p>Billing for <strong>${modelLabel}</strong> at the rates shown &mdash; input ${money(priceIn)}, cached ${money(priceCached)}, output ${money(priceOut)} per 1M. Cached tokens are <strong>always billed</strong> (at the cached rate); the quota toggle above affects TPM sizing only, not cost.</p>
-      <table>
-        <tr><th>Category</th><th class="num">Projected Tokens</th><th class="num">Rate / 1M</th><th class="num">Cost</th></tr>
-        <tr><td>Non-cached input (incl. system)</td><td class="num">~${fmt(pNonCached)}</td><td class="num">${money(priceIn)}</td><td class="num">${money(costNonCached)}</td></tr>
-        <tr><td>Cached input</td><td class="num">~${fmt(pCached)}</td><td class="num">${money(priceCached)}</td><td class="num">${money(costCached)}</td></tr>
-        <tr><td>Assistant output</td><td class="num">~${fmt(pOut)}</td><td class="num">${money(priceOut)}</td><td class="num">${money(costOut)}</td></tr>
-        <tr class="total"><td>Estimated monthly total</td><td class="num"></td><td class="num"></td><td class="num">${money(costTotal)}</td></tr>
-      </table>
-      <p>&asymp; <strong>${money(costPer1k)}</strong> per 1,000 conversations. Audio input/output tokens (if used) are billed separately at the realtime audio rates.</p>
-
-      <h3><span class="idx">7</span>Recommendation</h3>
-      <ul class="rec">
-        <li>Minimum (average load): <strong>${fmt(minReq)} TPM</strong></li>
-        <li>Recommended (peak-adjusted): <span class="pill">${fmt(safeReq)} TPM</span></li>
-        <li>RPM: default <strong>200 RPM</strong> for ${modelLabel} is sufficient for this workload</li>
-      </ul>
-
-      <div class="assumptions"><strong>Assumptions:</strong> ${days}-day month, ${peak.toFixed(1)}&times; peak-to-average ratio, and the target period mirroring baseline usage behavior. Sharing observed peak-hour concurrency would allow a more precise figure.</div>
-    `;
+    // Per-turn table — input grows as the full history is re-sent each turn
+    let thtml = "";
+    for (let i = 1; i <= T; i++) {
+      const tIn = S + (i - 1) * aT;          // instructions + prior assistant transcripts
+      const aIn = i * uA + (i - 1) * aA;     // prior user + assistant audio + new user audio
+      const totIn = tIn + aIn;
+      thtml += `<tr><td>${i}</td><td class="num">${fmt(tIn)}</td><td class="num">${fmt(aIn)}</td><td class="num">${fmt(totIn)}</td><td class="num">${fmt(aA)} audio + ${fmt(aT)} text</td></tr>`;
+    }
+    document.getElementById("turnBody").innerHTML = thtml;
   }
 
   render();
