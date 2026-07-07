@@ -201,6 +201,21 @@
           </div>
         </div>
 
+        <label>System Prompt Billing</label>
+        <select id="billMode">
+          <option value="perturn" selected>Billed every turn (accurate)</option>
+          <option value="once">Counted once (amortized / reference-style)</option>
+        </select>
+        <div class="hint" id="billHint"></div>
+
+        <label>Cache Hit Rate (previous-turn tokens)</label>
+        <input type="range" id="cacheRate" min="0" max="100" step="5" value="100">
+        <div class="range-legend">
+          <span id="cacheRateVal">100% cached</span>
+          <span id="cacheRateUnc">0% at full rate</span>
+        </div>
+        <div class="hint">Share of re-sent conversation-history tokens served from cache. 100% assumes perfect caching; lower values bill more history at the full input rate.</div>
+
         <label>User Input / Assistant Output Ratio</label>
         <input type="range" id="ratio" min="10" max="90" step="1" value="50">
         <div class="range-legend">
@@ -273,9 +288,9 @@
           <li>Speaking time is split between user and assistant per the ratio slider (default 50 / 50).</li>
           <li>Audio input tokens: <strong>10 tokens/second</strong> (1 token per 100&nbsp;ms).</li>
           <li>Audio output tokens: <strong>20 tokens/second</strong> (1 token per 50&nbsp;ms).</li>
-          <li>Messages from previous turns are assumed to be fully cached.</li>
+          <li>Previous-turn (history) tokens are cached per the <strong>Cache Hit Rate</strong> control (default 100%); any uncached share is billed at the full input rate.</li>
           <li>Text output is estimated at <strong>~3 tokens/second</strong> of assistant speaking time.</li>
-          <li>The system prompt (<code>instructions</code>) is re-sent as input on <strong>every turn</strong> &mdash; full rate on turn&nbsp;1, cached rate thereafter &mdash; so a large system prompt is a major cost and quota driver. Audio and cached tokens both count toward the TPM quota on Standard deployments.</li>
+          <li>The system prompt (<code>instructions</code>) is re-sent as input on <strong>every turn</strong> &mdash; full rate on turn&nbsp;1, cached rate thereafter. Use the <strong>System Prompt Billing</strong> control to switch between this accurate view and an amortized &ldquo;counted once&rdquo; view. Audio and cached tokens both count toward the TPM quota on Standard deployments.</li>
         </ul>
       </div>
     </div>
@@ -337,7 +352,7 @@
   const TEXT_OUT_TPS  = 3;    // assistant transcript: ~3 tokens / second
   const MIN_PER_MONTH = 30 * 24 * 60; // 43,200
 
-  const ids = ["model","convs","duration","turns","sysPrompt","ratio","peak"];
+  const ids = ["model","convs","duration","turns","sysPrompt","billMode","cacheRate","ratio","peak"];
   ids.forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener(el.tagName === "SELECT" ? "change" : "input", render);
@@ -374,23 +389,48 @@
     document.getElementById("qmPeakX").textContent = peak.toFixed(1);
 
     // Per-conversation token totals.
-    // Every turn re-sends the full conversation history as input; everything seen on a
-    // previous turn is cached. New content on turn i is only the user's new audio.
+    // Every turn re-sends the full conversation history as input. New content on turn i is the
+    // user's new audio; prior-turn (history) tokens are cached per the Cache Hit Rate.
     // Instructions (system prompt) are re-sent each turn: full rate on turn 1, cached after.
     const H = T * (T - 1) / 2; // total cached appearances of each per-turn item across the conversation
-    const audioInUnc = T * uA;                 // new user audio, once per turn
-    const audioInCac = (uA + aA) * H;          // all prior user + assistant audio, cached
+
+    // Cache hit rate: share of re-sent history billed at the cached rate; the remainder at full rate.
+    const r = (+document.getElementById("cacheRate").value || 0) / 100;
+    document.getElementById("cacheRateVal").textContent = `${Math.round(r*100)}% cached`;
+    document.getElementById("cacheRateUnc").textContent = `${Math.round((1-r)*100)}% at full rate`;
+
+    const audioHist  = (uA + aA) * H;          // cacheable prior user + assistant audio
+    const audioInUnc = T * uA + (1 - r) * audioHist;
+    const audioInCac = r * audioHist;
     const audioOut   = T * aA;
-    const textInUnc  = S;                       // instructions on turn 1 (full input rate)
-    const textInCac  = S * (T - 1) + aT * H;    // instructions cached on later turns + assistant transcripts
     const textOut    = T * aT;
+
+    // System-prompt billing mode
+    const billMode = document.getElementById("billMode").value;
+    let textInUnc, textInCac, sysOnce = 0;
+    if (billMode === "once") {
+      // Amortized: system prompt assumed cached across sessions, counted once (negligible per conversation)
+      const textHist = aT * H;                 // assistant transcript history only
+      textInUnc = (1 - r) * textHist;
+      textInCac = r * textHist;
+      sysOnce   = S;                           // one-time load for the whole month
+      document.getElementById("billHint").textContent =
+        "Instructions assumed cached across sessions and counted once. Matches the simplified reference calculator; understates cost for a large system prompt.";
+    } else {
+      // Accurate: instructions re-processed every turn (uncached turn 1, cached after)
+      const textHist = S * (T - 1) + aT * H;   // instructions (turns 2..T) + assistant transcripts
+      textInUnc = S + (1 - r) * textHist;
+      textInCac = r * textHist;
+      document.getElementById("billHint").textContent =
+        "Instructions re-processed each turn (full rate turn 1, cached after) \u2014 real Realtime billing. A large system prompt dominates cost.";
+    }
 
     // Monthly token totals
     const monthly = {
       audioInUnc: audioInUnc * C,
       audioInCac: audioInCac * C,
       audioOut:   audioOut   * C,
-      textInUnc:  textInUnc  * C,
+      textInUnc:  textInUnc  * C + sysOnce,
       textInCac:  textInCac  * C,
       textOut:    textOut    * C,
     };
