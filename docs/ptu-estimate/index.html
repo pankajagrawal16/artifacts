@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A Microsoft Foundry PTU sizing and architecture decision workbook for Sikt KI Service.">
-  <title>Sikt KI Service | PTU Decision Workbook</title>
+  <meta name="description" content="A Microsoft Foundry PTU sizing and architecture decision workbook for Fjordlight AI Service.">
+  <title>Fjordlight AI Service | PTU Decision Workbook</title>
   <script>
     (() => {
       const param = new URLSearchParams(window.location.search).get("scoutTheme");
@@ -403,11 +403,11 @@
   <a class="skip-link" href="#overview">Skip to overview</a>
   <header class="site-header">
     <div class="shell header-row">
-      <div class="brand" aria-label="Sikt KI Service PTU decision workbook">
+      <div class="brand" aria-label="Fjordlight AI Service PTU decision workbook">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"/></svg>
         </span>
-        <span class="brand-name">Sikt KI Service</span>
+        <span class="brand-name">Fjordlight AI Service</span>
         <span class="brand-context">PTU decision workbook</span>
       </div>
       <nav class="nav-list" aria-label="Page sections">
@@ -459,7 +459,7 @@
         </ul>
       </div>
 
-      <div class="architecture-frame" role="img" aria-label="Hybrid architecture with Sikt KI Service routing traffic by model and policy lane to a measured provisioned baseline or Standard spillover">
+      <div class="architecture-frame" role="img" aria-label="Hybrid architecture with Fjordlight AI Service routing traffic by model and policy lane to a measured provisioned baseline or Standard spillover">
         <p class="architecture-label">Target traffic pattern</p>
         <div class="architecture-grid">
           <article class="node">
@@ -470,7 +470,7 @@
           <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
           <article class="node node-accent">
             <p class="node-kicker">Shared service</p>
-            <h3 class="node-title">Sikt KI router</h3>
+            <h3 class="node-title">Fjordlight router</h3>
             <p class="node-copy">Routes by requested model version, approved content-policy lane, deployment health, and capacity state.</p>
           </article>
           <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
@@ -565,7 +565,7 @@
       <div class="section-head">
         <p class="eyebrow">PTU estimate</p>
         <h2>Size one model and content-policy lane at a time.</h2>
-        <p>The worksheet implements Microsoft's published manual formula for the GPT-4o through GPT-5.x-style sizing method. It deliberately begins empty: the values must come from Sikt's extracted telemetry and the exact model/version table in Microsoft Learn.</p>
+        <p>The worksheet implements Microsoft's published manual formula for the GPT-4o through GPT-5.x-style sizing method. It deliberately begins empty: the values must come from Fjordlight's extracted telemetry and the exact model/version table in Microsoft Learn.</p>
       </div>
 
       <div class="calculator-shell">
@@ -1119,7 +1119,7 @@
       const downloadLink = document.createElement("a");
       const objectUrl = URL.createObjectURL(blob);
       downloadLink.href = objectUrl;
-      downloadLink.download = "sikt-ptu-lane-input-schema.csv";
+      downloadLink.download = "fjordlight-ptu-lane-input-schema.csv";
       document.body.appendChild(downloadLink);
       downloadLink.click();
       downloadLink.remove();
