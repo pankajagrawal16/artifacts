@@ -243,25 +243,19 @@
     .scenario strong { color: var(--cp-text); }
     .scenario-footer { border-top: 1px solid var(--cp-border); color: var(--cp-text-soft); font-size: 12px; margin-top: 16px; padding-top: 14px; }
 
-    .citadel-alert { background: var(--cp-accent-soft); border: 1px solid var(--cp-danger); border-left: 4px solid var(--cp-danger); border-radius: 0.625rem; color: var(--cp-text); font-size: 13px; margin-bottom: 18px; padding: 15px 17px; }
-    .citadel-alert strong { display: block; margin-bottom: 4px; }
-    .citadel-alert span { color: var(--cp-text-muted); }
     .citadel-diagram { background: var(--cp-bg-elevated); border: 1px solid var(--cp-border); border-radius: 0.625rem; padding: 20px; }
     .citadel-row-label { color: var(--cp-text-muted); font-size: 11px; font-weight: 800; margin: 0 0 10px; text-transform: uppercase; }
     .citadel-flow { align-items: stretch; display: grid; gap: 9px; grid-template-columns: minmax(0, 0.9fr) 24px minmax(0, 1.1fr) 24px minmax(0, 1.15fr); }
     .citadel-node { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 0.625rem; min-height: 126px; padding: 15px; }
     .citadel-node h3 { font-size: 15px; margin: 0 0 7px; }
     .citadel-node p { color: var(--cp-text-muted); font-size: 12px; margin: 0; }
-    .citadel-node.target { border-color: var(--cp-warning); }
     .citadel-node.gateway { border-color: var(--cp-accent); }
     .citadel-node.models { border-color: var(--cp-success); }
     .citadel-kicker { color: var(--cp-text-soft); font-size: 10px; font-weight: 800; margin: 0 0 8px; text-transform: uppercase; }
-    .citadel-node.target .citadel-kicker { color: var(--cp-warning); }
     .citadel-node.gateway .citadel-kicker { color: var(--cp-accent); }
     .citadel-node.models .citadel-kicker { color: var(--cp-success); }
     .citadel-arrow { align-items: center; color: var(--cp-accent); display: flex; justify-content: center; }
     .citadel-arrow svg { height: 20px; width: 20px; }
-    .citadel-separator { border-top: 1px solid var(--cp-border); margin: 20px 0; }
     .citadel-layers { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .citadel-layer { background: var(--cp-surface); border: 1px solid var(--cp-border); border-top: 3px solid var(--cp-border-strong); border-radius: 0.625rem; min-height: 150px; padding: 15px; }
     .citadel-layer.layer-two { border-top-color: var(--cp-accent); }
@@ -550,39 +544,12 @@
     <section class="section" id="citadel-architecture">
       <div class="section-head">
         <p class="eyebrow">Foundry Citadel recommendation</p>
-        <h2>Apply Citadel to the AI service, and put a real access gate in front of the workbook.</h2>
-        <p>Citadel's layered governance pattern is a strong fit for managing shared AI traffic across model and policy lanes. It complements, but does not replace, a protected static-site host for the PTU workbook.</p>
+        <h2>Use Citadel to govern the AI service across model and policy lanes.</h2>
+        <p>Citadel's layered governance pattern provides a central control point for shared AI traffic while retaining separate model and policy lanes for the sector.</p>
       </div>
 
-      <div class="citadel-alert">
-        <span>This workbook is currently served by GitHub Pages and has no server-side Basic Auth or password protection. Do not treat the current public path as a protected review surface.</span>
-      </div>
-
-      <div class="citadel-diagram" role="img" aria-label="Recommended architecture separating a protected PTU workbook access path from Citadel-governed AI service traffic">
-        <p class="citadel-row-label">Viewer access plane</p>
-        <div class="citadel-flow">
-          <article class="citadel-node">
-            <p class="citadel-kicker">Reviewers</p>
-            <h3>Capacity and finance reviewers</h3>
-            <p>Use the workbook only through an authenticated or password-protected host.</p>
-          </article>
-          <div class="citadel-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <article class="citadel-node target">
-            <p class="citadel-kicker">Target access boundary</p>
-            <h3>Standalone protected workbook host</h3>
-            <p>Microsoft Entra route authorization is preferred; a shared password is a lighter alternative for an isolated site.</p>
-          </article>
-          <div class="citadel-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <article class="citadel-node">
-            <p class="citadel-kicker">Review tool</p>
-            <h3>Fjordlight PTU workbook</h3>
-            <p>Client-side CSV sizing and cost comparison. Uploaded telemetry remains in the browser.</p>
-          </article>
-        </div>
-
-        <div class="citadel-separator"></div>
-
-        <p class="citadel-row-label">AI workload governance plane</p>
+      <div class="citadel-diagram" role="img" aria-label="Citadel-governed AI service traffic from users through API Management to Azure AI Foundry model and policy lanes">
+        <p class="citadel-row-label">AI workload governance flow</p>
         <div class="citadel-flow">
           <article class="citadel-node">
             <p class="citadel-kicker">Consumers</p>
