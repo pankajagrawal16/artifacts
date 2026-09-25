@@ -21,6 +21,7 @@ Reference documentation and architecture guidance.
 | Document | Description |
 |---|---|
 | `ingress-digest/` | Azure ingress architecture options with mapping to Azure Learn and Well-Architected guidance |
+| `ptu-estimate/` | Microsoft Foundry PTU architecture decision workbook and per-model capacity calculator |
 | `real-time-quota/` | Azure quota sizing guidance for the `gpt-realtime` model |
 
 ---
