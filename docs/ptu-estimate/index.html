@@ -339,6 +339,8 @@
     input:focus, select:focus { border-color: var(--cp-accent); outline: 0; }
     input::placeholder { color: var(--cp-text-soft); }
     .field-help { color: var(--cp-text-soft); font-size: 11px; margin: 6px 0 0; }
+    .token-category-title { border-top: 1px solid var(--cp-border); color: var(--cp-text); font-size: 12px; font-weight: 800; margin: 16px 0 -1px; padding-top: 14px; }
+    .token-category-title:first-of-type { border-top: 0; margin-top: 12px; padding-top: 0; }
     .profile-status { border-left: 3px solid var(--cp-accent); color: var(--cp-text-muted); font-size: 12px; margin: 14px 0 0; padding-left: 11px; }
     .method-guide { border-top: 1px solid var(--cp-border); display: grid; gap: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; }
     .method-explainer { border-right: 1px solid var(--cp-border); padding: 13px 14px 0 0; }
@@ -717,13 +719,13 @@
       <article class="template-band">
         <h3>Requested per-lane telemetry template</h3>
         <p>Provide one row for every exact combination of model version, content-policy configuration, subscription, resource, region, and candidate deployment type. Use the peak one-minute values from an exam-period window; leave an unavailable value blank rather than substituting a portfolio average. The uploaded file remains in the browser and is not sent anywhere.</p>
-        <pre class="csv-template" aria-label="CSV header for per-lane telemetry">model_policy_lane,model_version,subscription_id,resource_name,region,candidate_deployment_type,sizing_method,peak_window_start_utc,peak_rpm_1m,avg_input_tokens_per_request,avg_output_tokens_per_request,prompt_cache_rate_pct,peak_duration_minutes,input_tpm_per_ptu,output_to_input_ratio,minimum_ptus,ptu_scale_increment,headroom_pct,monthly_input_tokens,monthly_output_tokens,spillover_allowed,p95_latency_target_ms,currency,pricing_product_name,paygo_input_pricing_sku,paygo_output_pricing_sku,ptu_pricing_sku,ptu_price_type,ptu_reservation_term,ptu_hourly_rate,planned_ptu_hours_per_month,paygo_input_price_per_m,paygo_output_price_per_m</pre>
+        <pre class="csv-template" aria-label="CSV header for per-lane telemetry">model_policy_lane,model_version,subscription_id,resource_name,region,candidate_deployment_type,sizing_method,peak_window_start_utc,peak_rpm_1m,avg_input_tokens_per_request,avg_output_tokens_per_request,prompt_cache_rate_pct,gpt6_short_input_tpm,gpt6_short_cached_input_tpm,gpt6_short_cache_write_tpm,gpt6_short_output_tpm,gpt6_long_input_tpm,gpt6_long_cached_input_tpm,gpt6_long_cache_write_tpm,gpt6_long_output_tpm,normalized_tpm_per_ptu,peak_duration_minutes,input_tpm_per_ptu,output_to_input_ratio,minimum_ptus,ptu_scale_increment,headroom_pct,monthly_input_tokens,monthly_output_tokens,spillover_allowed,p95_latency_target_ms,currency,pricing_product_name,paygo_input_pricing_sku,paygo_output_pricing_sku,ptu_pricing_sku,ptu_price_type,ptu_reservation_term,ptu_hourly_rate,planned_ptu_hours_per_month,paygo_input_price_per_m,paygo_output_price_per_m</pre>
         <div class="template-actions">
           <button class="button secondary" id="download-schema" type="button" title="Download the PTU input CSV schema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Download CSV schema</button>
           <label class="button file-button" for="telemetry-upload" title="Upload a completed PTU input CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>Upload completed CSV</label>
           <input class="visually-hidden" id="telemetry-upload" type="file" accept=".csv,text/csv">
         </div>
-        <p class="import-status" id="import-status" role="status">Download the schema, populate one row per lane, then upload it here. Use <strong>standard</strong> in <code>sizing_method</code> for the GPT-4o through GPT-5.x formula. To calculate public USD list prices, provide the exact product name and input, output, and PTU meter SKUs.</p>
+        <p class="import-status" id="import-status" role="status">Download the schema, populate one row per lane, then upload it here. Use <strong>standard</strong> for GPT-4o through GPT-5.x, or <strong>normalized</strong> for GPT-6 category-level capacity sizing. To calculate public USD list prices, provide the exact product name and input, output, and PTU meter SKUs.</p>
         <div class="import-results" id="import-results" hidden>
           <h4>Uploaded lane estimates</h4>
           <p class="import-summary" id="import-summary"></p>
@@ -755,7 +757,7 @@
               <label for="lane-name">Model and policy lane<input id="lane-name" type="text" placeholder="Example: exact model + content policy" autocomplete="off"></label>
             </div>
             <div class="field-grid">
-              <label for="model-profile">Documented model profile<select id="model-profile"><option value="">Custom model - enter advanced settings</option><option value="gpt-4o">gpt-4o (2024-05-13)</option><option value="gpt-4o-mini">gpt-4o-mini</option><option value="gpt-4-1">gpt-4.1 (2025-04-14)</option><option value="gpt-4-1-mini">gpt-4.1-mini (2025-04-14)</option><option value="gpt-4-1-nano">gpt-4.1-nano (2025-04-14)</option><option value="gpt-5">gpt-5 (2025-08-07)</option><option value="gpt-5-mini">gpt-5-mini (2025-08-07)</option><option value="gpt-6">GPT-6 or newer - normalized method</option></select></label>
+              <label for="model-profile">Documented model profile<select id="model-profile"><option value="">Custom model - enter advanced settings</option><option value="gpt-4o">gpt-4o (2024-05-13)</option><option value="gpt-4o-mini">gpt-4o-mini</option><option value="gpt-4-1">gpt-4.1 (2025-04-14)</option><option value="gpt-4-1-mini">gpt-4.1-mini (2025-04-14)</option><option value="gpt-4-1-nano">gpt-4.1-nano (2025-04-14)</option><option value="gpt-5">gpt-5 (2025-08-07)</option><option value="gpt-5-mini">gpt-5-mini (2025-08-07)</option><option value="gpt-6-astra">gpt-6-astra (2026-09-03)</option><option value="gpt-6-sol">gpt-6-sol (2026-09-22)</option></select></label>
               <label for="deployment-type">Deployment type<select id="deployment-type"><option value="">Select</option><option value="Global Provisioned">Global Provisioned</option><option value="Data Zone Provisioned">Data Zone Provisioned</option></select></label>
             </div>
             <div class="field-grid">
@@ -783,18 +785,18 @@
                   <span class="method-summary-title">GPT-6 normalized-token method</span>
                   <span class="method-summary-note">Use only for the exact GPT-6 model being deployed</span>
                 </summary>
-                <p>GPT-6 capacity cannot be estimated safely from just one cache percentage and one output multiplier.</p>
+                <p>This worksheet can size GPT-6 when the eight peak token categories below come from the same measured one-minute window.</p>
                 <ol class="method-steps">
                   <li>Separate new input from input reused from the prompt cache.</li>
                   <li>Account for cache writes: the first-time work that makes a prompt segment reusable.</li>
                   <li>Apply the current GPT-6 model's individual weights for input, cached input, cache writes, and output.</li>
                 </ol>
-                <div class="method-example"><strong>Why the worksheet stops here:</strong> two GPT-6 workloads with the same total token count can need different capacity when one reuses its cache more often. Use the exact current Microsoft Foundry sizing table or capacity calculator for that model rather than treating it as a GPT-5-style estimate.</div>
+                <div class="method-example"><strong>Why the categories matter:</strong> two GPT-6 workloads with the same total token count can need different capacity when one reuses its cache more often. This worksheet applies the published weights for GPT-6 Astra and Sol; use Foundry's calculator when the deployed model or version is different.</div>
               </details>
             </div>
           </fieldset>
 
-          <fieldset>
+          <fieldset id="standard-traffic-inputs">
             <legend>2. Enter observed peak traffic</legend>
             <div class="field-grid">
               <label for="peak-rpm">Peak requests per minute<input id="peak-rpm" inputmode="decimal" type="number" min="0" step="any" placeholder="From exam-period minute data"></label>
@@ -803,6 +805,25 @@
               <label for="cache-rate">Input cache rate (%)<input id="cache-rate" inputmode="decimal" type="number" min="0" max="100" step="any" placeholder="Observed percentage"></label>
             </div>
             <p class="field-help">Use peak RPM and request shape from the same workload window. The page does not infer cache behavior from total tokens.</p>
+          </fieldset>
+
+          <fieldset id="gpt6-traffic-inputs" hidden>
+            <legend>2. Enter GPT-6 peak token categories</legend>
+            <p class="field-help">Use tokens per minute from the same peak one-minute window. Assign each token to exactly one category; do not count cached or cache-write tokens again as ordinary input.</p>
+            <p class="token-category-title">Short context</p>
+            <div class="field-grid">
+              <label for="gpt6-short-input-tpm">New input TPM<input id="gpt6-short-input-tpm" inputmode="decimal" type="number" min="0" step="any" placeholder="Not read from cache"></label>
+              <label for="gpt6-short-cached-input-tpm">Cached input TPM<input id="gpt6-short-cached-input-tpm" inputmode="decimal" type="number" min="0" step="any" placeholder="Read from prompt cache"></label>
+              <label for="gpt6-short-cache-write-tpm">Cache write TPM<input id="gpt6-short-cache-write-tpm" inputmode="decimal" type="number" min="0" step="any" placeholder="First-time reusable work"></label>
+              <label for="gpt6-short-output-tpm">Output TPM<input id="gpt6-short-output-tpm" inputmode="decimal" type="number" min="0" step="any" placeholder="Model-generated tokens"></label>
+            </div>
+            <p class="token-category-title">Long context</p>
+            <div class="field-grid">
+              <label for="gpt6-long-input-tpm">New input TPM<input id="gpt6-long-input-tpm" inputmode="decimal" type="number" min="0" step="any" placeholder="Not read from cache"></label>
+              <label for="gpt6-long-cached-input-tpm">Cached input TPM<input id="gpt6-long-cached-input-tpm" inputmode="decimal" type="number" min="0" step="any" placeholder="Read from prompt cache"></label>
+              <label for="gpt6-long-cache-write-tpm">Cache write TPM<input id="gpt6-long-cache-write-tpm" inputmode="decimal" type="number" min="0" step="any" placeholder="First-time reusable work"></label>
+              <label for="gpt6-long-output-tpm">Output TPM<input id="gpt6-long-output-tpm" inputmode="decimal" type="number" min="0" step="any" placeholder="Model-generated tokens"></label>
+            </div>
           </fieldset>
 
           <details class="advanced-inputs">
@@ -845,8 +866,8 @@
             Add the exact model request shape and throughput parameters to calculate a PTU allocation.
           </div>
           <div class="summary-grid">
-            <div class="summary-item"><span class="summary-label">Input TPM</span><output class="summary-value" id="input-tpm-output">--</output></div>
-            <div class="summary-item"><span class="summary-label">Output TPM</span><output class="summary-value" id="output-tpm-output">--</output></div>
+            <div class="summary-item"><span class="summary-label" id="input-tpm-label">Input TPM</span><output class="summary-value" id="input-tpm-output">--</output></div>
+            <div class="summary-item"><span class="summary-label" id="output-tpm-label">Output TPM</span><output class="summary-value" id="output-tpm-output">--</output></div>
             <div class="summary-item"><span class="summary-label">Normalized TPM</span><output class="summary-value" id="normalized-tpm-output">--</output></div>
           </div>
           <div class="capacity-result">
@@ -932,6 +953,15 @@
       "avg_input_tokens_per_request",
       "avg_output_tokens_per_request",
       "prompt_cache_rate_pct",
+      "gpt6_short_input_tpm",
+      "gpt6_short_cached_input_tpm",
+      "gpt6_short_cache_write_tpm",
+      "gpt6_short_output_tpm",
+      "gpt6_long_input_tpm",
+      "gpt6_long_cached_input_tpm",
+      "gpt6_long_cache_write_tpm",
+      "gpt6_long_output_tpm",
+      "normalized_tpm_per_ptu",
       "peak_duration_minutes",
       "input_tpm_per_ptu",
       "output_to_input_ratio",
@@ -977,7 +1007,18 @@
       "gpt-4-1-nano": { label: "gpt-4.1-nano (2025-04-14)", method: "standard", inputTpmPerPtu: 59400, outputWeight: 4 },
       "gpt-5": { label: "gpt-5 (2025-08-07)", method: "standard", inputTpmPerPtu: 4750, outputWeight: 8 },
       "gpt-5-mini": { label: "gpt-5-mini (2025-08-07)", method: "standard", inputTpmPerPtu: 23750, outputWeight: 8 },
-      "gpt-6": { label: "GPT-6 or newer", method: "advanced" }
+      "gpt-6-astra": { label: "gpt-6-astra (2026-09-03)", method: "advanced", normalizedTpmPerPtu: 600 },
+      "gpt-6-sol": { label: "gpt-6-sol (2026-09-22)", method: "advanced", normalizedTpmPerPtu: 3000 }
+    };
+    const GPT6_NORMALIZED_WEIGHTS = {
+      shortInput: 1,
+      shortCachedInput: 0.1,
+      shortCacheWrite: 1.25,
+      shortOutput: 5,
+      longInput: 2,
+      longCachedInput: 0.2,
+      longCacheWrite: 2.5,
+      longOutput: 7.5
     };
     const PROVISIONED_GEOMETRY = {
       "Global Provisioned": { minPtu: 15, scaleIncrement: 5 },
@@ -991,6 +1032,14 @@
       inputPerRequest: document.getElementById("input-per-request"),
       outputPerRequest: document.getElementById("output-per-request"),
       cacheRate: document.getElementById("cache-rate"),
+      gpt6ShortInputTpm: document.getElementById("gpt6-short-input-tpm"),
+      gpt6ShortCachedInputTpm: document.getElementById("gpt6-short-cached-input-tpm"),
+      gpt6ShortCacheWriteTpm: document.getElementById("gpt6-short-cache-write-tpm"),
+      gpt6ShortOutputTpm: document.getElementById("gpt6-short-output-tpm"),
+      gpt6LongInputTpm: document.getElementById("gpt6-long-input-tpm"),
+      gpt6LongCachedInputTpm: document.getElementById("gpt6-long-cached-input-tpm"),
+      gpt6LongCacheWriteTpm: document.getElementById("gpt6-long-cache-write-tpm"),
+      gpt6LongOutputTpm: document.getElementById("gpt6-long-output-tpm"),
       inputTpmPerPtu: document.getElementById("input-tpm-per-ptu"),
       outputWeight: document.getElementById("output-weight"),
       minPtu: document.getElementById("min-ptu"),
@@ -1015,6 +1064,10 @@
       costNote: document.getElementById("cost-note"),
       formula: document.getElementById("formula-output")
     };
+    const summaryLabels = {
+      input: document.getElementById("input-tpm-label"),
+      output: document.getElementById("output-tpm-label")
+    };
 
     function updateMethodGuide() {
       const isAdvanced = inputs.sizingMethod.value === "advanced";
@@ -1024,7 +1077,7 @@
 
     function applyProfileGeometry(profile) {
       const geometry = PROVISIONED_GEOMETRY[inputs.deploymentType.value];
-      if (profile?.method === "standard" && geometry) {
+      if (profile && geometry) {
         inputs.minPtu.value = geometry.minPtu;
         inputs.scaleIncrement.value = geometry.scaleIncrement;
       }
@@ -1032,6 +1085,9 @@
 
     function applyModelProfile() {
       const profile = MODEL_PROFILES[modelProfile.value];
+      const usesNormalizedTokens = profile?.method === "advanced";
+      document.getElementById("standard-traffic-inputs").hidden = usesNormalizedTokens;
+      document.getElementById("gpt6-traffic-inputs").hidden = !usesNormalizedTokens;
       if (!profile) {
         profileStatus.textContent = "Custom model selected. Open advanced capacity overrides and enter the exact Foundry sizing values for the model and deployment type.";
         updateMethodGuide();
@@ -1043,9 +1099,8 @@
       if (profile.method === "advanced") {
         inputs.inputTpmPerPtu.value = "";
         inputs.outputWeight.value = "";
-        inputs.minPtu.value = "";
-        inputs.scaleIncrement.value = "";
-        profileStatus.textContent = "GPT-6 profiles use normalized token categories. The calculator will direct you to the exact Foundry capacity method rather than applying the GPT-4o through GPT-5.x formula.";
+        applyProfileGeometry(profile);
+        profileStatus.textContent = `${profile.label} uses the normalized-token method. Enter the eight short- and long-context token categories from the same peak minute.`;
       } else {
         inputs.inputTpmPerPtu.value = profile.inputTpmPerPtu;
         inputs.outputWeight.value = profile.outputWeight;
@@ -1077,13 +1132,92 @@
       return { inputTpm, outputTpm, normalizedTpm, rawPtu, withHeadroom, allocatedPtu };
     }
 
+    function calculateGpt6NormalizedCapacity(values, normalizedTpmPerPtu) {
+      const shortContextTpm = values.shortInput + values.shortCachedInput + values.shortCacheWrite + values.shortOutput;
+      const longContextTpm = values.longInput + values.longCachedInput + values.longCacheWrite + values.longOutput;
+      const normalizedTpm =
+        values.shortInput * GPT6_NORMALIZED_WEIGHTS.shortInput +
+        values.shortCachedInput * GPT6_NORMALIZED_WEIGHTS.shortCachedInput +
+        values.shortCacheWrite * GPT6_NORMALIZED_WEIGHTS.shortCacheWrite +
+        values.shortOutput * GPT6_NORMALIZED_WEIGHTS.shortOutput +
+        values.longInput * GPT6_NORMALIZED_WEIGHTS.longInput +
+        values.longCachedInput * GPT6_NORMALIZED_WEIGHTS.longCachedInput +
+        values.longCacheWrite * GPT6_NORMALIZED_WEIGHTS.longCacheWrite +
+        values.longOutput * GPT6_NORMALIZED_WEIGHTS.longOutput;
+      const rawPtu = normalizedTpm / normalizedTpmPerPtu;
+      const withHeadroom = rawPtu * (1 + values.headroom / 100);
+      const allocatedPtu = Math.max(values.minPtu, Math.ceil(withHeadroom / values.scaleIncrement) * values.scaleIncrement);
+      return { shortContextTpm, longContextTpm, normalizedTpm, rawPtu, withHeadroom, allocatedPtu };
+    }
+
+    function setSummaryLabels(inputLabel = "Input TPM", outputLabel = "Output TPM") {
+      summaryLabels.input.textContent = inputLabel;
+      summaryLabels.output.textContent = outputLabel;
+    }
+
     function setCapacityOutputsToUnknown(message) {
+      setSummaryLabels();
       outputs.inputTpm.textContent = "--";
       outputs.outputTpm.textContent = "--";
       outputs.normalizedTpm.textContent = "--";
       outputs.allocatedPtu.innerHTML = "-- <span>PTUs</span>";
       outputs.capacityDetail.textContent = "The allocation is the raw model requirement rounded up to the chosen model's supported minimum and scale increment.";
       outputs.state.innerHTML = `<strong>Awaiting measured inputs</strong>${message}`;
+    }
+
+    function calculateGpt6(profile, laneName, deploymentType) {
+      setSummaryLabels("Short-context TPM", "Long-context TPM");
+      const values = {
+        shortInput: numberFrom(inputs.gpt6ShortInputTpm),
+        shortCachedInput: numberFrom(inputs.gpt6ShortCachedInputTpm),
+        shortCacheWrite: numberFrom(inputs.gpt6ShortCacheWriteTpm),
+        shortOutput: numberFrom(inputs.gpt6ShortOutputTpm),
+        longInput: numberFrom(inputs.gpt6LongInputTpm),
+        longCachedInput: numberFrom(inputs.gpt6LongCachedInputTpm),
+        longCacheWrite: numberFrom(inputs.gpt6LongCacheWriteTpm),
+        longOutput: numberFrom(inputs.gpt6LongOutputTpm),
+        minPtu: numberFrom(inputs.minPtu),
+        scaleIncrement: numberFrom(inputs.scaleIncrement),
+        headroom: numberFrom(inputs.headroom)
+      };
+      const required = [
+        ["model and policy lane", laneName],
+        ["deployment type", deploymentType],
+        ["short-context new input TPM", values.shortInput],
+        ["short-context cached input TPM", values.shortCachedInput],
+        ["short-context cache write TPM", values.shortCacheWrite],
+        ["short-context output TPM", values.shortOutput],
+        ["long-context new input TPM", values.longInput],
+        ["long-context cached input TPM", values.longCachedInput],
+        ["long-context cache write TPM", values.longCacheWrite],
+        ["long-context output TPM", values.longOutput],
+        ["minimum PTUs", values.minPtu],
+        ["PTU scale increment", values.scaleIncrement],
+        ["approved headroom", values.headroom]
+      ];
+      const missing = required.filter(([, value]) => value === "" || value === null).map(([name]) => name);
+      const invalid = Object.entries(values).some(([, value]) => value !== null && (!Number.isFinite(value) || value < 0));
+
+      if (missing.length || invalid || values.minPtu === 0 || values.scaleIncrement === 0) {
+        const issues = [];
+        if (missing.length) issues.push(`Missing: ${missing.join(", ")}.`);
+        if (invalid || values.minPtu === 0 || values.scaleIncrement === 0) issues.push("Use non-negative token categories and headroom, plus positive deployment geometry.");
+        setCapacityOutputsToUnknown(issues.join(" "));
+        setSummaryLabels("Short-context TPM", "Long-context TPM");
+        setCostOutputsToUnknown("GPT-6 capacity needs separate category-level PayGo meter inputs. A commercial comparison is not calculated in this version.");
+        outputs.formula.textContent = "Normalized TPM = sum of each GPT-6 token category multiplied by its model-specific normalized-token weight.";
+        return;
+      }
+
+      const capacity = calculateGpt6NormalizedCapacity(values, profile.normalizedTpmPerPtu);
+      outputs.state.innerHTML = `<strong>GPT-6 capacity calculation complete</strong>${profile.label} sized as ${deploymentType}. Validate with the Foundry capacity calculator and representative traffic before a production or reservation decision.`;
+      outputs.inputTpm.textContent = formatNumber(capacity.shortContextTpm);
+      outputs.outputTpm.textContent = formatNumber(capacity.longContextTpm);
+      outputs.normalizedTpm.textContent = formatNumber(capacity.normalizedTpm);
+      outputs.allocatedPtu.innerHTML = `${formatNumber(capacity.allocatedPtu, 2)} <span>PTUs</span>`;
+      outputs.capacityDetail.textContent = `Raw requirement ${formatNumber(capacity.rawPtu, 2)} PTUs; ${formatNumber(values.headroom, 2)}% approved headroom makes ${formatNumber(capacity.withHeadroom, 2)} PTUs before the ${formatNumber(values.scaleIncrement, 2)}-PTU scale increment and ${formatNumber(values.minPtu, 2)}-PTU minimum.`;
+      outputs.formula.textContent = `Normalized TPM = (${formatNumber(values.shortInput)} x 1) + (${formatNumber(values.shortCachedInput)} x 0.1) + (${formatNumber(values.shortCacheWrite)} x 1.25) + (${formatNumber(values.shortOutput)} x 5) + (${formatNumber(values.longInput)} x 2) + (${formatNumber(values.longCachedInput)} x 0.2) + (${formatNumber(values.longCacheWrite)} x 2.5) + (${formatNumber(values.longOutput)} x 7.5) = ${formatNumber(capacity.normalizedTpm)}`;
+      setCostOutputsToUnknown("GPT-6 capacity is calculated. A same-lane PayGo comparison needs exact monthly token categories and pricing meters, which are not part of this capacity-only implementation.");
     }
 
     function setCostOutputsToUnknown(message) {
@@ -1096,6 +1230,7 @@
       const laneName = inputs.laneName.value.trim();
       const deploymentType = inputs.deploymentType.value;
       const sizingMethod = inputs.sizingMethod.value;
+      const profile = MODEL_PROFILES[modelProfile.value];
       const values = {
         peakRpm: numberFrom(inputs.peakRpm),
         inputPerRequest: numberFrom(inputs.inputPerRequest),
@@ -1109,11 +1244,17 @@
       };
 
       if (sizingMethod === "advanced") {
-        setCapacityOutputsToUnknown("The GPT-6 method has separate normalized weights for input, cached input, cache writes, and output. Use the exact current model formula in Foundry or Microsoft Learn rather than this simplified worksheet.");
-        setCostOutputsToUnknown("Commercial comparison remains unavailable until exact price and usage values are entered.");
-        outputs.formula.textContent = "GPT-6+ uses category-specific normalized-token weights. Refer to the model-specific Microsoft Learn sizing table and capacity calculator.";
+        if (!profile?.normalizedTpmPerPtu) {
+          setCapacityOutputsToUnknown("Select a supported GPT-6 profile with published normalized-token capacity values, or use the Foundry capacity calculator for a different model or version.");
+          setCostOutputsToUnknown("Commercial comparison remains unavailable until exact price and usage values are entered.");
+          outputs.formula.textContent = "GPT-6 uses category-specific normalized-token weights. Refer to the model-specific Microsoft Learn sizing table and capacity calculator.";
+          return;
+        }
+        calculateGpt6(profile, laneName, deploymentType);
         return;
       }
+
+      setSummaryLabels();
 
       const required = [
         ["model and policy lane", laneName],
@@ -1294,6 +1435,62 @@
       return unit === "1/hour" || unit === "1hour" ? meter.retailPrice : null;
     }
 
+    function evaluateImportedGpt6Lane(row, laneName, deploymentType) {
+      const values = {
+        shortInput: csvNumber(row, "gpt6_short_input_tpm"),
+        shortCachedInput: csvNumber(row, "gpt6_short_cached_input_tpm"),
+        shortCacheWrite: csvNumber(row, "gpt6_short_cache_write_tpm"),
+        shortOutput: csvNumber(row, "gpt6_short_output_tpm"),
+        longInput: csvNumber(row, "gpt6_long_input_tpm"),
+        longCachedInput: csvNumber(row, "gpt6_long_cached_input_tpm"),
+        longCacheWrite: csvNumber(row, "gpt6_long_cache_write_tpm"),
+        longOutput: csvNumber(row, "gpt6_long_output_tpm"),
+        normalizedTpmPerPtu: csvNumber(row, "normalized_tpm_per_ptu"),
+        minPtu: csvNumber(row, "minimum_ptus"),
+        scaleIncrement: csvNumber(row, "ptu_scale_increment"),
+        headroom: csvNumber(row, "headroom_pct")
+      };
+      const required = [
+        ["model and policy lane", laneName],
+        ["model version", csvValue(row, "model_version")],
+        ["candidate deployment type", deploymentType],
+        ["short-context new input TPM", values.shortInput],
+        ["short-context cached input TPM", values.shortCachedInput],
+        ["short-context cache write TPM", values.shortCacheWrite],
+        ["short-context output TPM", values.shortOutput],
+        ["long-context new input TPM", values.longInput],
+        ["long-context cached input TPM", values.longCachedInput],
+        ["long-context cache write TPM", values.longCacheWrite],
+        ["long-context output TPM", values.longOutput],
+        ["normalized TPM per PTU", values.normalizedTpmPerPtu],
+        ["minimum PTUs", values.minPtu],
+        ["PTU scale increment", values.scaleIncrement],
+        ["headroom", values.headroom]
+      ];
+      const missing = required.filter(([, value]) => value === "" || value === null).map(([name]) => name);
+      const invalid = Object.entries(values).some(([, value]) => value !== null && (!Number.isFinite(value) || value < 0));
+      const supportedDeployment = ["global provisioned", "data zone provisioned"].includes(deploymentType.toLowerCase());
+
+      if (missing.length || invalid || values.normalizedTpmPerPtu === 0 || values.minPtu === 0 || values.scaleIncrement === 0 || !supportedDeployment) {
+        const reasons = [];
+        if (missing.length) reasons.push(`Missing ${missing.join(", ")}.`);
+        if (!supportedDeployment) reasons.push("Use Global Provisioned or Data Zone Provisioned.");
+        if (invalid || values.normalizedTpmPerPtu === 0 || values.minPtu === 0 || values.scaleIncrement === 0) reasons.push("Use valid non-negative token categories, headroom 0 or higher, and positive normalized throughput, minimum, and scale values.");
+        return { laneName, deploymentType, status: reasons.join(" "), state: "invalid" };
+      }
+
+      const capacity = calculateGpt6NormalizedCapacity(values, values.normalizedTpmPerPtu);
+      return {
+        laneName,
+        deploymentType,
+        normalizedTpm: capacity.normalizedTpm,
+        allocatedPtu: capacity.allocatedPtu,
+        pricing: null,
+        status: "GPT-6 normalized capacity calculated. Category-level PayGo pricing is not included.",
+        state: "valid"
+      };
+    }
+
     function evaluateImportedLane(row, priceSnapshot) {
       const method = csvValue(row, "sizing_method").toLowerCase();
       const laneName = csvValue(row, "model_policy_lane");
@@ -1310,8 +1507,9 @@
         headroom: csvNumber(row, "headroom_pct")
       };
 
+      if (method === "normalized") return evaluateImportedGpt6Lane(row, laneName, deploymentType);
       if (method !== "standard") {
-        return { laneName, deploymentType, status: "Use the model-specific normalized-token method for this row.", state: "review" };
+        return { laneName, deploymentType, status: "Use standard for GPT-4o through GPT-5.x, or normalized for GPT-6 category-level sizing.", state: "review" };
       }
 
       const required = [
@@ -1463,7 +1661,7 @@
       });
 
       importResults.hidden = false;
-      importSummary.textContent = `${rows.length} lane${rows.length === 1 ? "" : "s"} loaded: ${calculatedCount} fully calculated, ${reviewCount} requiring review, ${invalidCount} invalid. These rows are not an automatically reservable total; confirm matching deployment type, region, scope, and capacity before aggregating.`;
+      importSummary.textContent = `${rows.length} lane${rows.length === 1 ? "" : "s"} loaded: ${calculatedCount} with capacity calculated, ${reviewCount} requiring review, ${invalidCount} invalid. Commercial comparisons can remain unavailable for capacity-only rows. These rows are not an automatically reservable total; confirm matching deployment type, region, scope, and capacity before aggregating.`;
     }
 
     function importTelemetryFile(file) {
