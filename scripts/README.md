@@ -37,3 +37,11 @@ uv run scripts/check_quota_tier.py -s <SUBSCRIPTION_ID>
 │ default         │ Tier 1         │ OnceUpgradeIsAvailable   │ 2025-10-18 05:09 UTC  │
 ╘═════════════════╧════════════════╧══════════════════════════╧═══════════════════════╛
 ```
+
+## refresh_azure_openai_prices.mjs
+
+Generates a compact USD Azure OpenAI retail-price snapshot for the PTU workbook. The GitHub Pages workflow refreshes this snapshot on every publish and daily; the generated JSON remains untracked.
+
+```bash
+node scripts/refresh_azure_openai_prices.mjs
+```

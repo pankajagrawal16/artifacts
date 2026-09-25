@@ -653,19 +653,19 @@
       <article class="template-band">
         <h3>Requested per-lane telemetry template</h3>
         <p>Provide one row for every exact combination of model version, content-policy configuration, subscription, resource, region, and candidate deployment type. Use the peak one-minute values from an exam-period window; leave an unavailable value blank rather than substituting a portfolio average. The uploaded file remains in the browser and is not sent anywhere.</p>
-        <pre class="csv-template" aria-label="CSV header for per-lane telemetry">model_policy_lane,model_version,subscription_id,resource_name,region,candidate_deployment_type,sizing_method,peak_window_start_utc,peak_rpm_1m,avg_input_tokens_per_request,avg_output_tokens_per_request,prompt_cache_rate_pct,peak_duration_minutes,input_tpm_per_ptu,output_to_input_ratio,minimum_ptus,ptu_scale_increment,headroom_pct,monthly_input_tokens,monthly_output_tokens,spillover_allowed,p95_latency_target_ms,currency,ptu_hourly_rate,planned_ptu_hours_per_month,paygo_input_price_per_m,paygo_output_price_per_m</pre>
+        <pre class="csv-template" aria-label="CSV header for per-lane telemetry">model_policy_lane,model_version,subscription_id,resource_name,region,candidate_deployment_type,sizing_method,peak_window_start_utc,peak_rpm_1m,avg_input_tokens_per_request,avg_output_tokens_per_request,prompt_cache_rate_pct,peak_duration_minutes,input_tpm_per_ptu,output_to_input_ratio,minimum_ptus,ptu_scale_increment,headroom_pct,monthly_input_tokens,monthly_output_tokens,spillover_allowed,p95_latency_target_ms,currency,pricing_product_name,paygo_input_pricing_sku,paygo_output_pricing_sku,ptu_pricing_sku,ptu_price_type,ptu_reservation_term,ptu_hourly_rate,planned_ptu_hours_per_month,paygo_input_price_per_m,paygo_output_price_per_m</pre>
         <div class="template-actions">
           <button class="button secondary" id="download-schema" type="button" title="Download the PTU input CSV schema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>Download CSV schema</button>
           <label class="button file-button" for="telemetry-upload" title="Upload a completed PTU input CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>Upload completed CSV</label>
           <input class="visually-hidden" id="telemetry-upload" type="file" accept=".csv,text/csv">
         </div>
-        <p class="import-status" id="import-status" role="status">Download the schema, populate one row per lane, then upload it here. Use <strong>standard</strong> in <code>sizing_method</code> for the GPT-4o through GPT-5.x formula.</p>
+        <p class="import-status" id="import-status" role="status">Download the schema, populate one row per lane, then upload it here. Use <strong>standard</strong> in <code>sizing_method</code> for the GPT-4o through GPT-5.x formula. To calculate public USD list prices, provide the exact product name and input, output, and PTU meter SKUs.</p>
         <div class="import-results" id="import-results" hidden>
           <h4>Uploaded lane estimates</h4>
           <p class="import-summary" id="import-summary"></p>
           <div class="table-wrap">
             <table class="import-table">
-              <thead><tr><th>Lane</th><th>Model version</th><th>Deployment</th><th class="numeric">Normalized TPM</th><th class="numeric">Allocated PTUs</th><th class="numeric">PTU monthly estimate</th><th class="numeric">PayGo monthly estimate</th><th>Status</th></tr></thead>
+              <thead><tr><th>Lane</th><th>Model version</th><th>Deployment</th><th class="numeric">Normalized TPM</th><th class="numeric">Allocated PTUs</th><th class="numeric">PTU monthly estimate</th><th class="numeric">PayGo monthly estimate</th><th>Price source</th><th>Status</th></tr></thead>
               <tbody id="import-results-body"></tbody>
             </table>
           </div>
@@ -724,16 +724,16 @@
           </fieldset>
 
           <fieldset>
-            <legend>Optional cost comparison inputs</legend>
+            <legend>Optional commercial override inputs</legend>
             <div class="field-grid">
-              <label for="ptu-hourly-rate">PTU rate per hour<input id="ptu-hourly-rate" inputmode="decimal" type="number" min="0" step="any" placeholder="Exact currency rate"></label>
+              <label for="ptu-hourly-rate">PTU rate per hour (override)<input id="ptu-hourly-rate" inputmode="decimal" type="number" min="0" step="any" placeholder="Contract currency rate"></label>
               <label for="deployed-hours">Deployed hours per month<input id="deployed-hours" inputmode="decimal" type="number" min="0" step="any" placeholder="Enter planned runtime"></label>
               <label for="monthly-input-m">Monthly input tokens (millions)<input id="monthly-input-m" inputmode="decimal" type="number" min="0" step="any" placeholder="Same lane only"></label>
               <label for="monthly-output-m">Monthly output tokens (millions)<input id="monthly-output-m" inputmode="decimal" type="number" min="0" step="any" placeholder="Same lane only"></label>
-              <label for="paygo-input-rate">PayGo input per 1M tokens<input id="paygo-input-rate" inputmode="decimal" type="number" min="0" step="any" placeholder="Exact currency rate"></label>
-              <label for="paygo-output-rate">PayGo output per 1M tokens<input id="paygo-output-rate" inputmode="decimal" type="number" min="0" step="any" placeholder="Exact currency rate"></label>
+              <label for="paygo-input-rate">PayGo input per 1M (override)<input id="paygo-input-rate" inputmode="decimal" type="number" min="0" step="any" placeholder="Contract currency rate"></label>
+              <label for="paygo-output-rate">PayGo output per 1M (override)<input id="paygo-output-rate" inputmode="decimal" type="number" min="0" step="any" placeholder="Contract currency rate"></label>
             </div>
-            <p class="field-help">Use exact rates from the Azure pricing calculator for the selected region, model, billing currency, and purchase term. Do not use an hourly scale-up plan as the production baseline without checking capacity risk and reservation economics.</p>
+            <p class="field-help">For imported lanes, leave overrides blank and provide exact Azure price-meter SKUs to use the generated USD public list-price snapshot. Use overrides only for customer-specific terms. Do not use an hourly scale-up plan as the production baseline without checking capacity risk and reservation economics.</p>
           </fieldset>
 
           <div class="actions">
@@ -771,7 +771,7 @@
               <output class="cost-value" id="paygo-cost-output">--</output>
             </article>
           </div>
-          <p class="result-notes" id="cost-note">Enter all six cost fields for a same-lane comparison. Pricing is deliberately not embedded because region, model, currency, and term are not known.</p>
+          <p class="result-notes" id="cost-note">Manual comparison uses commercial overrides. Imported lanes can instead use exact meter SKUs and the generated USD public list-price snapshot.</p>
           <div class="formula" id="formula-output">Normalized TPM = (peak RPM x input tokens x (1 - cache rate)) + (output-to-input ratio x peak RPM x output tokens)</div>
         </aside>
       </div>
@@ -801,6 +801,7 @@
         <li><a href="https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput" target="_blank" rel="noopener noreferrer">What is provisioned throughput for Foundry Models?</a> - source for deployment types, quota/capacity distinctions, Standard spillover, and reservation behavior.</li>
         <li><a href="https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput-billing" target="_blank" rel="noopener noreferrer">Provisioned throughput billing and cost management</a> - source for hourly PTU billing, reservation coverage, scope, and deployment-first purchase guidance.</li>
         <li><a href="https://github.com/Azure-Samples/foundry-citadel-platform" target="_blank" rel="noopener noreferrer">Foundry Citadel Platform</a> - source for the layered governance pattern; it is not a replacement for static-site authentication or authorization.</li>
+        <li><a href="https://learn.microsoft.com/rest/api/cost-management/retail-prices/azure-retail-prices" target="_blank" rel="noopener noreferrer">Azure Retail Prices API</a> - source for the generated USD public list-price snapshot; it does not reflect contract discounts or reservation eligibility.</li>
         <li><a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener noreferrer">Azure Pricing Calculator</a> - use this to supply the exact commercial values to the calculator after the model, region, currency, deployment type, and term are known.</li>
       </ul>
     </section>
@@ -817,6 +818,8 @@
     const importResults = document.getElementById("import-results");
     const importSummary = document.getElementById("import-summary");
     const importResultsBody = document.getElementById("import-results-body");
+    const usdPriceSnapshotUrl = new URL("retail-prices-usd.json", window.location.href).href;
+    let usdPriceSnapshotPromise;
     const csvSchemaColumns = [
       "model_policy_lane",
       "model_version",
@@ -841,6 +844,12 @@
       "spillover_allowed",
       "p95_latency_target_ms",
       "currency",
+      "pricing_product_name",
+      "paygo_input_pricing_sku",
+      "paygo_output_pricing_sku",
+      "ptu_pricing_sku",
+      "ptu_price_type",
+      "ptu_reservation_term",
       "ptu_hourly_rate",
       "planned_ptu_hours_per_month",
       "paygo_input_price_per_m",
@@ -1080,7 +1089,52 @@
       return value === "" ? null : Number(value.replace(/,/g, ""));
     }
 
-    function evaluateImportedLane(row) {
+    function normalizedPriceValue(value) {
+      return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+    }
+
+    function loadUsdPriceSnapshot() {
+      if (!usdPriceSnapshotPromise) {
+        usdPriceSnapshotPromise = fetch(usdPriceSnapshotUrl, { cache: "no-store" })
+          .then(response => {
+            if (!response.ok) throw new Error(`USD price snapshot unavailable (${response.status}).`);
+            return response.json();
+          })
+          .then(snapshot => {
+            if (snapshot.currencyCode !== "USD" || !Array.isArray(snapshot.meters)) throw new Error("USD price snapshot has an invalid format.");
+            return snapshot;
+          })
+          .catch(error => ({ currencyCode: "USD", meters: [], error: error.message }));
+      }
+      return usdPriceSnapshotPromise;
+    }
+
+    function findSnapshotMeter(snapshot, lookup) {
+      const matches = snapshot.meters.filter(meter =>
+        normalizedPriceValue(meter.productName) === normalizedPriceValue(lookup.productName) &&
+        normalizedPriceValue(meter.skuName) === normalizedPriceValue(lookup.skuName) &&
+        normalizedPriceValue(meter.armRegionName) === normalizedPriceValue(lookup.region) &&
+        normalizedPriceValue(meter.priceType) === normalizedPriceValue(lookup.priceType) &&
+        normalizedPriceValue(meter.reservationTerm) === normalizedPriceValue(lookup.reservationTerm)
+      );
+      if (matches.length === 1) return { meter: matches[0] };
+      if (!matches.length) return { error: `No ${lookup.priceType} meter matched ${lookup.skuName} in ${lookup.region}.` };
+      return { error: `More than one meter matched ${lookup.skuName} in ${lookup.region}.` };
+    }
+
+    function pricePerMillionTokens(meter) {
+      const unit = normalizedPriceValue(meter.unitOfMeasure).replace(/\s/g, "");
+      if (unit === "1k") return meter.retailPrice * 1000;
+      if (unit === "1m" || unit === "1million") return meter.retailPrice;
+      return null;
+    }
+
+    function pricePerPtuHour(meter) {
+      const unit = normalizedPriceValue(meter.unitOfMeasure).replace(/\s/g, "");
+      return unit === "1/hour" || unit === "1hour" ? meter.retailPrice : null;
+    }
+
+    function evaluateImportedLane(row, priceSnapshot) {
       const method = csvValue(row, "sizing_method").toLowerCase();
       const laneName = csvValue(row, "model_policy_lane");
       const deploymentType = csvValue(row, "candidate_deployment_type");
@@ -1127,33 +1181,87 @@
       }
 
       const capacity = calculateProvisionedCapacity(values);
-      const pricing = calculateImportedPricing(row, capacity.allocatedPtu);
+      const pricingResult = calculateImportedPricing(row, capacity.allocatedPtu, priceSnapshot);
+      const pricing = pricingResult.pricing;
       return {
         laneName,
         deploymentType,
         normalizedTpm: capacity.normalizedTpm,
         allocatedPtu: capacity.allocatedPtu,
         pricing,
-        status: pricing ? "Capacity and entered-price comparison calculated." : "Capacity calculated; pricing inputs incomplete.",
+        status: pricing ? `Capacity and ${pricing.source.toLowerCase()} comparison calculated.` : pricingResult.issue || "Capacity calculated; pricing inputs incomplete.",
         state: pricing ? "valid" : "review"
       };
     }
 
-    function calculateImportedPricing(row, allocatedPtu) {
+    function calculateContractPricing(row, allocatedPtu) {
       const ptuHourlyRate = csvNumber(row, "ptu_hourly_rate");
       const deployedHours = csvNumber(row, "planned_ptu_hours_per_month");
       const monthlyInputTokens = csvNumber(row, "monthly_input_tokens");
       const monthlyOutputTokens = csvNumber(row, "monthly_output_tokens");
       const paygoInputRate = csvNumber(row, "paygo_input_price_per_m");
       const paygoOutputRate = csvNumber(row, "paygo_output_price_per_m");
-      const values = [ptuHourlyRate, deployedHours, monthlyInputTokens, monthlyOutputTokens, paygoInputRate, paygoOutputRate];
-      if (values.some(value => value === null || !Number.isFinite(value) || value < 0)) return null;
+      const rateOverrides = [ptuHourlyRate, paygoInputRate, paygoOutputRate];
+      const usageValues = [deployedHours, monthlyInputTokens, monthlyOutputTokens];
+      if (rateOverrides.every(value => value === null)) return { pricing: null };
+      if (rateOverrides.some(value => value === null || !Number.isFinite(value) || value < 0) || usageValues.some(value => value === null || !Number.isFinite(value) || value < 0)) return { issue: "Complete all commercial override fields and shared usage values, or leave all rate overrides blank." };
 
       return {
-        currency: csvValue(row, "currency"),
-        ptuCost: allocatedPtu * ptuHourlyRate * deployedHours,
-        paygoCost: (monthlyInputTokens / 1000000) * paygoInputRate + (monthlyOutputTokens / 1000000) * paygoOutputRate
+        pricing: {
+          currency: csvValue(row, "currency"),
+          ptuCost: allocatedPtu * ptuHourlyRate * deployedHours,
+          paygoCost: (monthlyInputTokens / 1000000) * paygoInputRate + (monthlyOutputTokens / 1000000) * paygoOutputRate,
+          source: "contract-price override"
+        }
       };
+    }
+
+    function calculatePublicListPricing(row, allocatedPtu, priceSnapshot) {
+      const productName = csvValue(row, "pricing_product_name");
+      const inputSku = csvValue(row, "paygo_input_pricing_sku");
+      const outputSku = csvValue(row, "paygo_output_pricing_sku");
+      const ptuSku = csvValue(row, "ptu_pricing_sku");
+      const ptuPriceType = csvValue(row, "ptu_price_type") || "Consumption";
+      const ptuReservationTerm = csvValue(row, "ptu_reservation_term");
+      const region = csvValue(row, "region");
+      const currency = csvValue(row, "currency").toUpperCase();
+      const deployedHours = csvNumber(row, "planned_ptu_hours_per_month");
+      const monthlyInputTokens = csvNumber(row, "monthly_input_tokens");
+      const monthlyOutputTokens = csvNumber(row, "monthly_output_tokens");
+      const pricingFields = [productName, inputSku, outputSku, ptuSku];
+
+      if (pricingFields.every(value => value === "")) return { pricing: null };
+      if (pricingFields.some(value => value === "")) return { issue: "Provide pricing product name plus exact input, output, and PTU meter SKUs for public list pricing." };
+      if (!region) return { issue: "Provide an Azure region to match public price meters." };
+      if (currency && currency !== "USD") return { issue: "The embedded public price snapshot is USD only; use a USD currency value or a commercial override." };
+      if (normalizedPriceValue(ptuPriceType) === "reservation" && !ptuReservationTerm) return { issue: "Provide the exact PTU reservation term for a reservation price lookup." };
+      if (![deployedHours, monthlyInputTokens, monthlyOutputTokens].every(value => Number.isFinite(value) && value >= 0)) return { issue: "Provide deployed hours and monthly input and output token totals for public list pricing." };
+      if (priceSnapshot.error) return { issue: priceSnapshot.error };
+
+      const inputMeter = findSnapshotMeter(priceSnapshot, { productName, skuName: inputSku, region, priceType: "Consumption", reservationTerm: "" });
+      const outputMeter = findSnapshotMeter(priceSnapshot, { productName, skuName: outputSku, region, priceType: "Consumption", reservationTerm: "" });
+      const ptuMeter = findSnapshotMeter(priceSnapshot, { productName, skuName: ptuSku, region, priceType: ptuPriceType, reservationTerm: ptuReservationTerm });
+      if (inputMeter.error || outputMeter.error || ptuMeter.error) return { issue: [inputMeter.error, outputMeter.error, ptuMeter.error].filter(Boolean).join(" ") };
+
+      const inputRate = pricePerMillionTokens(inputMeter.meter);
+      const outputRate = pricePerMillionTokens(outputMeter.meter);
+      const ptuHourlyRate = pricePerPtuHour(ptuMeter.meter);
+      if (![inputRate, outputRate, ptuHourlyRate].every(value => Number.isFinite(value))) return { issue: "Matched meter units cannot be converted to token-per-million or PTU-per-hour pricing." };
+
+      return {
+        pricing: {
+          currency: "USD",
+          ptuCost: allocatedPtu * ptuHourlyRate * deployedHours,
+          paygoCost: (monthlyInputTokens / 1000000) * inputRate + (monthlyOutputTokens / 1000000) * outputRate,
+          source: "public USD list-price snapshot"
+        }
+      };
+    }
+
+    function calculateImportedPricing(row, allocatedPtu, priceSnapshot) {
+      const contractResult = calculateContractPricing(row, allocatedPtu);
+      if (contractResult.pricing || contractResult.issue) return contractResult;
+      return calculatePublicListPricing(row, allocatedPtu, priceSnapshot);
     }
 
     function formatImportedCost(pricing, key) {
@@ -1169,14 +1277,14 @@
       rowElement.appendChild(cell);
     }
 
-    function renderImportedResults(rows) {
+    function renderImportedResults(rows, priceSnapshot) {
       importResultsBody.replaceChildren();
       let calculatedCount = 0;
       let reviewCount = 0;
       let invalidCount = 0;
 
       rows.forEach((row, index) => {
-        const result = evaluateImportedLane(row);
+        const result = evaluateImportedLane(row, priceSnapshot);
         const tableRow = document.createElement("tr");
         appendImportedCell(tableRow, result.laneName || `Row ${index + 2}`);
         appendImportedCell(tableRow, csvValue(row, "model_version") || "--");
@@ -1185,6 +1293,7 @@
         appendImportedCell(tableRow, result.allocatedPtu === undefined ? "--" : formatNumber(result.allocatedPtu, 2), "numeric");
         appendImportedCell(tableRow, formatImportedCost(result.pricing, "ptuCost"), "numeric");
         appendImportedCell(tableRow, formatImportedCost(result.pricing, "paygoCost"), "numeric");
+        appendImportedCell(tableRow, result.pricing?.source || "Not available");
         appendImportedCell(tableRow, result.status, `row-status ${result.state}`);
         importResultsBody.appendChild(tableRow);
 
@@ -1202,7 +1311,7 @@
       importStatus.textContent = `Reading ${file.name}...`;
       importResults.hidden = true;
 
-      reader.onload = () => {
+      reader.onload = async () => {
         try {
           const parsedRows = parseCsv(String(reader.result));
           if (parsedRows.length < 2) throw new Error("Include a header row and at least one lane row.");
@@ -1210,8 +1319,11 @@
           const missingHeaders = requiredCsvColumns.filter(header => !headers.includes(header));
           if (missingHeaders.length) throw new Error(`Missing required columns: ${missingHeaders.join(", ")}.`);
           const records = parsedRows.slice(1).map(values => Object.fromEntries(headers.map((header, index) => [header, values[index] || ""])));
-          renderImportedResults(records);
-          importStatus.textContent = `Loaded ${records.length} row${records.length === 1 ? "" : "s"} from ${file.name}.`;
+          importStatus.textContent = `Loading USD public price snapshot for ${file.name}...`;
+          const priceSnapshot = await loadUsdPriceSnapshot();
+          renderImportedResults(records, priceSnapshot);
+          const snapshotStatus = priceSnapshot.error ? ` USD public prices were unavailable: ${priceSnapshot.error}` : " USD public list prices are available when exact meter SKUs are supplied.";
+          importStatus.textContent = `Loaded ${records.length} row${records.length === 1 ? "" : "s"} from ${file.name}.${snapshotStatus}`;
         } catch (error) {
           importResults.hidden = true;
           importStatus.textContent = `Could not import ${file.name}: ${error.message}`;

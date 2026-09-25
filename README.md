@@ -11,6 +11,7 @@ Standalone Python scripts for Azure operations. All scripts use [uv](https://doc
 | Script | Description |
 |---|---|
 | `check_quota_tier.py` | Check the Azure AI Foundry quota tier for a subscription, look up per-model quota by region, and get guidance on requesting quota increases |
+| `refresh_azure_openai_prices.mjs` | Generate the public USD Azure OpenAI retail-price snapshot used by the PTU workbook |
 
 See [`scripts/README.md`](scripts/README.md) for usage details.
 

@@ -6,7 +6,10 @@ on:
       - main
     paths:
       - 'docs/**'
+      - 'scripts/refresh_azure_openai_prices.mjs'
       - '.github/workflows/pages.yml'
+  schedule:
+    - cron: '17 4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -27,6 +30,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Refresh Azure OpenAI retail price snapshot
+        run: node scripts/refresh_azure_openai_prices.mjs
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
