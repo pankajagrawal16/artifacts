@@ -245,25 +245,33 @@
 
     .citadel-diagram { background: var(--cp-bg-elevated); border: 1px solid var(--cp-border); border-radius: 0.625rem; padding: 20px; }
     .citadel-row-label { color: var(--cp-text-muted); font-size: 11px; font-weight: 800; margin: 0 0 10px; text-transform: uppercase; }
-    .citadel-flow { align-items: stretch; display: grid; gap: 9px; grid-template-columns: minmax(0, 0.9fr) 24px minmax(0, 1.1fr) 24px minmax(0, 1.15fr); }
-    .citadel-node { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 0.625rem; min-height: 126px; padding: 15px; }
-    .citadel-node h3 { font-size: 15px; margin: 0 0 7px; }
-    .citadel-node p { color: var(--cp-text-muted); font-size: 12px; margin: 0; }
-    .citadel-node.gateway { border-color: var(--cp-accent); }
-    .citadel-node.models { border-color: var(--cp-success); }
-    .citadel-kicker { color: var(--cp-text-soft); font-size: 10px; font-weight: 800; margin: 0 0 8px; text-transform: uppercase; }
-    .citadel-node.gateway .citadel-kicker { color: var(--cp-accent); }
-    .citadel-node.models .citadel-kicker { color: var(--cp-success); }
-    .citadel-arrow { align-items: center; color: var(--cp-accent); display: flex; justify-content: center; }
-    .citadel-arrow svg { height: 20px; width: 20px; }
-    .citadel-layers { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .citadel-layer { background: var(--cp-surface); border: 1px solid var(--cp-border); border-top: 3px solid var(--cp-border-strong); border-radius: 0.625rem; min-height: 150px; padding: 15px; }
-    .citadel-layer.layer-two { border-top-color: var(--cp-accent); }
-    .citadel-layer.layer-three { border-top-color: var(--cp-success); }
-    .citadel-layer.layer-four { border-top-color: var(--cp-warning); }
-    .citadel-layer-label { color: var(--cp-text-soft); font-size: 10px; font-weight: 800; margin: 0 0 8px; text-transform: uppercase; }
-    .citadel-layer h3 { font-size: 14px; margin: 0 0 7px; }
-    .citadel-layer p { color: var(--cp-text-muted); font-size: 12px; margin: 0; }
+    .citadel-map { border: 1px solid var(--cp-border); border-radius: 0.5rem; overflow-x: auto; }
+    .citadel-map svg { display: block; min-width: 1040px; width: 100%; }
+    .citadel-map .map-title { fill: var(--cp-text); font-family: "Segoe UI", Aptos, sans-serif; font-size: 14px; font-weight: 750; }
+    .citadel-map .map-copy { fill: var(--cp-text-muted); font-family: "Segoe UI", Aptos, sans-serif; font-size: 11px; }
+    .citadel-map .map-label { fill: var(--cp-text-soft); font-family: "Segoe UI", Aptos, sans-serif; font-size: 10px; font-weight: 750; letter-spacing: 0.6px; text-transform: uppercase; }
+    .citadel-map .map-node { fill: var(--cp-surface); stroke: var(--cp-border-strong); stroke-width: 1.4; }
+    .citadel-map .map-node.gateway { stroke: var(--cp-accent); stroke-width: 2; }
+    .citadel-map .map-node.ptu { stroke: var(--cp-success); stroke-width: 1.7; }
+    .citadel-map .map-node.standard { stroke: var(--cp-warning); stroke-width: 1.7; }
+    .citadel-map .map-node.control { fill: var(--cp-surface-soft); stroke: var(--cp-accent); stroke-dasharray: 4 3; }
+    .citadel-map .map-node.identity { fill: var(--cp-surface-soft); stroke: var(--cp-success); stroke-dasharray: 2 3; }
+    .citadel-map .map-node.security { fill: var(--cp-surface-soft); stroke: var(--cp-warning); stroke-dasharray: 4 3; }
+    .citadel-map .runtime-path { fill: none; marker-end: url(#runtime-arrow); stroke: var(--cp-accent); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+    .citadel-map .ptu-path { fill: none; marker-end: url(#ptu-arrow); stroke: var(--cp-success); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+    .citadel-map .standard-path { fill: none; marker-end: url(#standard-arrow); stroke: var(--cp-warning); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.5; }
+    .citadel-map .control-path { fill: none; marker-end: url(#control-arrow); stroke: var(--cp-text-muted); stroke-dasharray: 6 5; stroke-linecap: round; stroke-width: 1.7; }
+    .citadel-map .identity-path { fill: none; marker-end: url(#identity-arrow); stroke: var(--cp-success); stroke-dasharray: 2 5; stroke-linecap: round; stroke-width: 1.7; }
+    .citadel-map .security-path { fill: none; marker-end: url(#security-arrow); stroke: var(--cp-warning); stroke-dasharray: 6 4; stroke-linecap: round; stroke-width: 1.7; }
+    .citadel-map .map-icon { fill: none; stroke: var(--cp-text-muted); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+    .citadel-map .accent-icon { stroke: var(--cp-accent); }
+    .citadel-map .success-icon { stroke: var(--cp-success); }
+    .citadel-map .warning-icon { stroke: var(--cp-warning); }
+    .citadel-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; }
+    .citadel-legend span { align-items: center; color: var(--cp-text-muted); display: inline-flex; font-size: 11px; gap: 6px; }
+    .legend-line { background: var(--cp-accent); display: inline-block; height: 2px; width: 24px; }
+    .legend-line.control { background: repeating-linear-gradient(to right, var(--cp-text-muted) 0 6px, transparent 6px 11px); }
+    .legend-line.identity { background: repeating-linear-gradient(to right, var(--cp-success) 0 2px, transparent 2px 7px); }
     .citadel-fit { color: var(--cp-text-soft); font-size: 12px; margin: 14px 0 0; }
     .citadel-fit strong { color: var(--cp-text); }
 
@@ -331,6 +339,16 @@
     input:focus, select:focus { border-color: var(--cp-accent); outline: 0; }
     input::placeholder { color: var(--cp-text-soft); }
     .field-help { color: var(--cp-text-soft); font-size: 11px; margin: 6px 0 0; }
+    .profile-status { border-left: 3px solid var(--cp-accent); color: var(--cp-text-muted); font-size: 12px; margin: 14px 0 0; padding-left: 11px; }
+    .method-guide { border-top: 1px solid var(--cp-border); display: grid; gap: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; }
+    .method-guide > div { border-right: 1px solid var(--cp-border); padding: 13px 14px 0 0; }
+    .method-guide > div + div { border-right: 0; padding-left: 14px; padding-right: 0; }
+    .method-guide h4 { font-size: 12px; margin: 0 0 5px; }
+    .method-guide p { color: var(--cp-text-muted); font-size: 11px; margin: 0; }
+    .method-guide .is-active h4 { color: var(--cp-accent); }
+    .advanced-inputs { border: 0; border-top: 1px solid var(--cp-border); margin-top: 20px; padding-top: 15px; }
+    .advanced-inputs summary { color: var(--cp-text); cursor: pointer; font-size: 12px; font-weight: 800; }
+    .advanced-inputs[open] summary { margin-bottom: 4px; }
     .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
     .button {
       align-items: center;
@@ -403,8 +421,6 @@
     @media (max-width: 900px) {
       .hero-layout, .recommendation, .calculator-shell { grid-template-columns: 1fr; }
       .architecture-grid { grid-template-columns: 1fr; }
-      .citadel-flow { grid-template-columns: 1fr; }
-      .citadel-arrow { min-height: 20px; transform: rotate(90deg); }
       .flow-arrow { min-height: 20px; transform: rotate(90deg); }
       .lane-stack { grid-template-columns: 1fr; }
       .node, .lane-stack .node { min-height: 104px; }
@@ -415,7 +431,9 @@
       .nav-list { justify-content: flex-start; }
       .hero { padding-top: 42px; }
       .fact-strip, .scenario-grid, .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .citadel-layers { grid-template-columns: 1fr; }
+      .method-guide { grid-template-columns: 1fr; }
+      .method-guide > div, .method-guide > div + div { border-bottom: 1px solid var(--cp-border); border-right: 0; padding: 12px 0; }
+      .method-guide > div:last-child { border-bottom: 0; }
       .field-grid, .summary-grid, .cost-grid { grid-template-columns: 1fr; }
       .scenario > p { min-height: 0; }
     }
@@ -548,46 +566,116 @@
         <p>Citadel's layered governance pattern provides a central control point for shared AI traffic while retaining separate model and policy lanes for the sector.</p>
       </div>
 
-      <div class="citadel-diagram" role="img" aria-label="Citadel-governed AI service traffic from users through API Management to Azure AI Foundry model and policy lanes">
+      <div class="citadel-diagram">
         <p class="citadel-row-label">AI workload governance flow</p>
-        <div class="citadel-flow">
-          <article class="citadel-node">
-            <p class="citadel-kicker">Consumers</p>
-            <h3>Students and faculty</h3>
-            <p>Use the shared Fjordlight AI service, with demand rising around academic peaks.</p>
-          </article>
-          <div class="citadel-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <article class="citadel-node gateway">
-            <p class="citadel-kicker">Citadel layer 1</p>
-            <h3>Governance Hub: API Management</h3>
-            <p>Central policy point for model routing, identity validation, quotas, content controls, and cost attribution.</p>
-          </article>
-          <div class="citadel-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-          <article class="citadel-node models">
-            <p class="citadel-kicker">Model portfolio</p>
-            <h3>Azure AI Foundry model and policy lanes</h3>
-            <p>Separately sized deployments across subscriptions, supporting baseline PTU and Standard spillover patterns.</p>
-          </article>
-        </div>
+        <div class="citadel-map">
+          <svg viewBox="0 0 1120 570" role="img" aria-labelledby="citadel-map-title citadel-map-desc">
+            <title id="citadel-map-title">Fjordlight AI service governed with the Foundry Citadel pattern</title>
+            <desc id="citadel-map-desc">Academic users make requests through the Fjordlight service and a central API Management governance hub. The hub branches traffic to global PTU, regional data-zone PTU, and Standard surge lanes. Azure AI Foundry, Microsoft Entra, Defender, and Purview provide governance signals around the runtime path.</desc>
+            <defs>
+              <marker id="runtime-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4"><path d="M0,0 L8,4 L0,8 Z" fill="var(--cp-accent)"/></marker>
+              <marker id="ptu-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4"><path d="M0,0 L8,4 L0,8 Z" fill="var(--cp-success)"/></marker>
+              <marker id="standard-arrow" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4"><path d="M0,0 L8,4 L0,8 Z" fill="var(--cp-warning)"/></marker>
+              <marker id="control-arrow" markerHeight="7" markerWidth="7" orient="auto" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 Z" fill="var(--cp-text-muted)"/></marker>
+              <marker id="identity-arrow" markerHeight="7" markerWidth="7" orient="auto" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 Z" fill="var(--cp-success)"/></marker>
+              <marker id="security-arrow" markerHeight="7" markerWidth="7" orient="auto" refX="6" refY="3.5"><path d="M0,0 L7,3.5 L0,7 Z" fill="var(--cp-warning)"/></marker>
+            </defs>
 
-        <div class="citadel-layers" style="margin-top: 10px;">
-          <article class="citadel-layer layer-two">
-            <p class="citadel-layer-label">Citadel layer 2</p>
-            <h3>AI control plane</h3>
-            <p>Use Foundry control-plane monitoring, evaluations, and traces to create cost and compliance evidence from the governed traffic.</p>
-          </article>
-          <article class="citadel-layer layer-three">
-            <p class="citadel-layer-label">Citadel layer 3</p>
-            <h3>Identity and accountability</h3>
-            <p>Use Microsoft Entra identities and access governance for human reviewers, workloads, and eventual agent identities.</p>
-          </article>
-          <article class="citadel-layer layer-four">
-            <p class="citadel-layer-label">Citadel layer 4</p>
-            <h3>Security fabric</h3>
-            <p>Use Defender and Purview signals to layer threat detection and data-governance controls around the service.</p>
-          </article>
+            <text class="map-label" x="35" y="35">Runtime request path</text>
+            <text class="map-label" x="460" y="35">Citadel governance fabric</text>
+            <text class="map-label" x="804" y="35">Separately sized deployment lanes</text>
+
+            <path class="control-path" d="M600 125 V188"/>
+            <path class="control-path" d="M724 80 H760 V118 H800"/>
+            <path class="control-path" d="M724 80 H775 V268 H800"/>
+            <path class="control-path" d="M724 80 H760 V418 H800"/>
+            <path class="identity-path" d="M365 448 V390 H505 V342"/>
+            <path class="security-path" d="M656 448 V390 H700 V342"/>
+            <path class="security-path" d="M764 468 H800"/>
+
+            <path class="runtime-path" d="M185 282 H250"/>
+            <path class="runtime-path" d="M400 282 H460"/>
+            <path class="ptu-path" d="M660 282 H742 V118 H800"/>
+            <path class="ptu-path" d="M660 282 H800"/>
+            <path class="standard-path" d="M660 282 H742 V418 H800"/>
+
+            <g transform="translate(35 235)">
+              <rect class="map-node" height="94" rx="10" width="150"/>
+              <circle class="map-icon" cx="25" cy="25" r="8"/>
+              <path class="map-icon" d="M12 46c2-8 24-8 26 0M40 29c7 0 12 4 13 10M48 21a6 6 0 1 0 0 12"/>
+              <text class="map-title" x="20" y="66">Students and faculty</text>
+              <text class="map-copy" x="20" y="83">Academic peak demand</text>
+            </g>
+
+            <g transform="translate(250 235)">
+              <rect class="map-node" height="94" rx="10" width="150"/>
+              <path class="map-icon accent-icon" d="M24 22h17l8 8v20H24zM41 22v9h8M30 42h14M30 49h12"/>
+              <text class="map-title" x="20" y="66">Fjordlight AI</text>
+              <text class="map-copy" x="20" y="83">Shared service entry</text>
+            </g>
+
+            <g transform="translate(460 188)">
+              <rect class="map-node gateway" height="154" rx="12" width="200"/>
+              <path class="map-icon accent-icon" d="M24 33h26M24 44h26M28 22v33M46 22v33M53 27l8 7-8 7"/>
+              <text class="map-label" x="20" y="78">Citadel layer 1</text>
+              <text class="map-title" x="20" y="101">API Management hub</text>
+              <text class="map-copy" x="20" y="121">Routing, quotas, content policy</text>
+              <text class="map-copy" x="20" y="137">and cost attribution</text>
+            </g>
+
+            <g transform="translate(505 40)">
+              <rect class="map-node control" height="85" rx="10" width="220"/>
+              <path class="map-icon accent-icon" d="M24 25h22v17H24zM29 48v8M41 48v8M21 56h28"/>
+              <text class="map-label" x="56" y="28">Citadel layer 2</text>
+              <text class="map-title" x="56" y="49">Foundry control plane</text>
+              <text class="map-copy" x="56" y="67">Traces, evaluations, evidence</text>
+            </g>
+
+            <g transform="translate(225 448)">
+              <rect class="map-node identity" height="76" rx="10" width="230"/>
+              <path class="map-icon success-icon" d="M25 24a8 8 0 1 0 0.01 0M13 50c3-10 21-10 24 0M45 23l5 5 9-10"/>
+              <text class="map-label" x="61" y="27">Citadel layer 3</text>
+              <text class="map-title" x="61" y="49">Microsoft Entra identity</text>
+              <text class="map-copy" x="61" y="66">Workload and reviewer accountability</text>
+            </g>
+
+            <g transform="translate(540 448)">
+              <rect class="map-node security" height="76" rx="10" width="224"/>
+              <path class="map-icon warning-icon" d="M25 21l14 6v9c0 9-6 16-14 20-8-4-14-11-14-20v-9zM25 31v9M25 46h.01"/>
+              <text class="map-label" x="57" y="27">Citadel layer 4</text>
+              <text class="map-title" x="57" y="49">Defender + Purview</text>
+              <text class="map-copy" x="57" y="66">Threat and data-governance signals</text>
+            </g>
+
+            <g transform="translate(800 76)">
+              <rect class="map-node ptu" height="84" rx="10" width="270"/>
+              <path class="map-icon success-icon" d="M25 24h24M25 35h24M29 46h16M52 19v32"/>
+              <text class="map-label" x="68" y="27">Baseline lane</text>
+              <text class="map-title" x="68" y="49">Global PTU deployment</text>
+              <text class="map-copy" x="68" y="67">Predictable capacity for model + policy</text>
+            </g>
+            <g transform="translate(800 226)">
+              <rect class="map-node ptu" height="84" rx="10" width="270"/>
+              <path class="map-icon success-icon" d="M28 20c9 0 16 7 16 16 0 10-16 23-16 23S12 46 12 36c0-9 7-16 16-16zM28 31h.01"/>
+              <text class="map-label" x="68" y="27">Regional lane</text>
+              <text class="map-title" x="68" y="49">EU Data Zone PTU</text>
+              <text class="map-copy" x="68" y="67">Regional boundary where required</text>
+            </g>
+            <g transform="translate(800 376)">
+              <rect class="map-node standard" height="84" rx="10" width="270"/>
+              <path class="map-icon warning-icon" d="M18 41h10l7-20 9 35 7-15h12"/>
+              <text class="map-label" x="68" y="27">Surge lane</text>
+              <text class="map-title" x="68" y="49">Standard spillover</text>
+              <text class="map-copy" x="68" y="67">Burst handling under approved policy</text>
+            </g>
+          </svg>
         </div>
-        <p class="citadel-fit"><strong>Recommendation:</strong> adopt Citadel incrementally around the production AI service. Keep the workbook access boundary independent so access can be enforced even before full governance integration is complete.</p>
+        <div class="citadel-legend" aria-label="Architecture diagram legend">
+          <span><i class="legend-line" aria-hidden="true"></i>Runtime request path</span>
+          <span><i class="legend-line control" aria-hidden="true"></i>Governance and evidence signal</span>
+          <span><i class="legend-line identity" aria-hidden="true"></i>Identity assertion</span>
+        </div>
+        <p class="citadel-fit"><strong>Recommendation:</strong> establish the API Management hub as the initial Citadel control point, then add Foundry evidence, Entra accountability, and Defender/Purview signals as the production model portfolio matures.</p>
       </div>
     </section>
 
@@ -649,25 +737,36 @@
       <div class="calculator-shell">
         <form class="input-panel" id="sizing-form" novalidate>
           <h3 class="panel-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-9"/></svg>Lane inputs</h3>
-          <p class="panel-intro">Enter one deployment candidate. Blank means unknown, not zero.</p>
+          <p class="panel-intro">Choose a documented model profile, select the deployment type, then enter measured peak traffic. Customer demand is never guessed.</p>
 
           <fieldset>
-            <legend>Deployment identity</legend>
+            <legend>1. Choose model and deployment</legend>
             <div class="field-grid one">
               <label for="lane-name">Model and policy lane<input id="lane-name" type="text" placeholder="Example: exact model + content policy" autocomplete="off"></label>
             </div>
             <div class="field-grid">
+              <label for="model-profile">Documented model profile<select id="model-profile"><option value="">Custom model - enter advanced settings</option><option value="gpt-4o">gpt-4o (2024-05-13)</option><option value="gpt-4o-mini">gpt-4o-mini</option><option value="gpt-4-1">gpt-4.1 (2025-04-14)</option><option value="gpt-4-1-mini">gpt-4.1-mini (2025-04-14)</option><option value="gpt-4-1-nano">gpt-4.1-nano (2025-04-14)</option><option value="gpt-5">gpt-5 (2025-08-07)</option><option value="gpt-5-mini">gpt-5-mini (2025-08-07)</option><option value="gpt-6">GPT-6 or newer - normalized method</option></select></label>
               <label for="deployment-type">Deployment type<select id="deployment-type"><option value="">Select</option><option value="Global Provisioned">Global Provisioned</option><option value="Data Zone Provisioned">Data Zone Provisioned</option></select></label>
-              <label for="sizing-method">Sizing method<select id="sizing-method"><option value="">Select</option><option value="standard">GPT-4o through GPT-5.x formula</option><option value="advanced">GPT-6 normalized-token method</option></select></label>
             </div>
             <div class="field-grid">
               <label for="region">Candidate region<input id="region" type="text" placeholder="Required for a price quote" autocomplete="off"></label>
-              <label for="currency">Billing currency<input id="currency" type="text" placeholder="Example: NOK or EUR" autocomplete="off"></label>
+              <label for="currency">Billing currency<input id="currency" type="text" value="USD" placeholder="Example: NOK or EUR" autocomplete="off"></label>
+            </div>
+            <p class="profile-status" id="profile-status">Choose a documented profile to autofill model-specific PTU constants, or use a custom model and open advanced settings.</p>
+            <div class="method-guide" aria-label="PTU sizing method explanation">
+              <div id="standard-method-guide">
+                <h4>GPT-4o through GPT-5.x formula</h4>
+                <p>Converts peak input and output into normalized TPM using the selected profile's throughput and output weighting.</p>
+              </div>
+              <div id="advanced-method-guide">
+                <h4>GPT-6 normalized-token method</h4>
+                <p>Weights input, cached input, cache writes, and output separately. Use the exact current Foundry capacity calculator for the selected GPT-6 model.</p>
+              </div>
             </div>
           </fieldset>
 
           <fieldset>
-            <legend>Observed peak request shape</legend>
+            <legend>2. Enter observed peak traffic</legend>
             <div class="field-grid">
               <label for="peak-rpm">Peak requests per minute<input id="peak-rpm" inputmode="decimal" type="number" min="0" step="any" placeholder="From exam-period minute data"></label>
               <label for="input-per-request">Input tokens per request<input id="input-per-request" inputmode="decimal" type="number" min="0" step="any" placeholder="Average at peak"></label>
@@ -677,20 +776,21 @@
             <p class="field-help">Use peak RPM and request shape from the same workload window. The page does not infer cache behavior from total tokens.</p>
           </fieldset>
 
-          <fieldset>
-            <legend>Exact model throughput parameters</legend>
+          <details class="advanced-inputs">
+            <summary>Advanced capacity overrides</summary>
             <div class="field-grid">
+              <label for="sizing-method">Sizing method<select id="sizing-method"><option value="">Select</option><option value="standard">GPT-4o through GPT-5.x formula</option><option value="advanced">GPT-6 normalized-token method</option></select></label>
               <label for="input-tpm-per-ptu">Input TPM per PTU<input id="input-tpm-per-ptu" inputmode="decimal" type="number" min="0" step="any" placeholder="From Learn model table"></label>
               <label for="output-weight">Output-to-input ratio<input id="output-weight" inputmode="decimal" type="number" min="0" step="any" placeholder="From Learn model table"></label>
               <label for="min-ptu">Minimum deployment PTUs<input id="min-ptu" inputmode="decimal" type="number" min="0" step="any" placeholder="For chosen deployment type"></label>
               <label for="scale-increment">PTU scale increment<input id="scale-increment" inputmode="decimal" type="number" min="0" step="any" placeholder="For chosen deployment type"></label>
-              <label for="headroom">Additional capacity headroom (%)<input id="headroom" inputmode="decimal" type="number" min="0" max="1000" step="any" placeholder="Enter an approved buffer"></label>
+              <label for="headroom">Additional capacity headroom (%)<input id="headroom" inputmode="decimal" type="number" min="0" max="1000" step="any" value="0" placeholder="Enter an approved buffer"></label>
             </div>
-            <p class="field-help">Select the values that match the exact model, version, and Global or Data Zone deployment type. Minimums and increments differ by model and deployment type.</p>
-          </fieldset>
+            <p class="field-help">Profiles populate these values from the Foundry sizing table. Headroom defaults to 0% until an approved buffer is supplied; override only with a documented reason.</p>
+          </details>
 
-          <fieldset>
-            <legend>Optional commercial override inputs</legend>
+          <details class="advanced-inputs">
+            <summary>Optional commercial contract overrides</summary>
             <div class="field-grid">
               <label for="ptu-hourly-rate">PTU rate per hour (override)<input id="ptu-hourly-rate" inputmode="decimal" type="number" min="0" step="any" placeholder="Contract currency rate"></label>
               <label for="deployed-hours">Deployed hours per month<input id="deployed-hours" inputmode="decimal" type="number" min="0" step="any" placeholder="Enter planned runtime"></label>
@@ -700,7 +800,7 @@
               <label for="paygo-output-rate">PayGo output per 1M (override)<input id="paygo-output-rate" inputmode="decimal" type="number" min="0" step="any" placeholder="Contract currency rate"></label>
             </div>
             <p class="field-help">For imported lanes, leave overrides blank and provide exact Azure price-meter SKUs to use the generated USD public list-price snapshot. Use overrides only for customer-specific terms. Do not use an hourly scale-up plan as the production baseline without checking capacity risk and reservation economics.</p>
-          </fieldset>
+          </details>
 
           <div class="actions">
             <button class="button" type="submit" title="Calculate PTU requirement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v16h16"/><path d="m7 14 4-4 3 2 4-5"/></svg>Calculate PTUs</button>
@@ -784,6 +884,10 @@
     const importResults = document.getElementById("import-results");
     const importSummary = document.getElementById("import-summary");
     const importResultsBody = document.getElementById("import-results-body");
+    const modelProfile = document.getElementById("model-profile");
+    const profileStatus = document.getElementById("profile-status");
+    const standardMethodGuide = document.getElementById("standard-method-guide");
+    const advancedMethodGuide = document.getElementById("advanced-method-guide");
     const usdPriceSnapshotUrl = new URL("retail-prices-usd.json", window.location.href).href;
     let usdPriceSnapshotPromise;
     const csvSchemaColumns = [
@@ -836,6 +940,20 @@
       "ptu_scale_increment",
       "headroom_pct"
     ];
+    const MODEL_PROFILES = {
+      "gpt-4o": { label: "gpt-4o (2024-05-13)", method: "standard", inputTpmPerPtu: 2500, outputWeight: 4 },
+      "gpt-4o-mini": { label: "gpt-4o-mini", method: "standard", inputTpmPerPtu: 37000, outputWeight: 4 },
+      "gpt-4-1": { label: "gpt-4.1 (2025-04-14)", method: "standard", inputTpmPerPtu: 3000, outputWeight: 4 },
+      "gpt-4-1-mini": { label: "gpt-4.1-mini (2025-04-14)", method: "standard", inputTpmPerPtu: 14900, outputWeight: 4 },
+      "gpt-4-1-nano": { label: "gpt-4.1-nano (2025-04-14)", method: "standard", inputTpmPerPtu: 59400, outputWeight: 4 },
+      "gpt-5": { label: "gpt-5 (2025-08-07)", method: "standard", inputTpmPerPtu: 4750, outputWeight: 8 },
+      "gpt-5-mini": { label: "gpt-5-mini (2025-08-07)", method: "standard", inputTpmPerPtu: 23750, outputWeight: 8 },
+      "gpt-6": { label: "GPT-6 or newer", method: "advanced" }
+    };
+    const PROVISIONED_GEOMETRY = {
+      "Global Provisioned": { minPtu: 15, scaleIncrement: 5 },
+      "Data Zone Provisioned": { minPtu: 15, scaleIncrement: 5 }
+    };
     const inputs = {
       laneName: document.getElementById("lane-name"),
       deploymentType: document.getElementById("deployment-type"),
@@ -868,6 +986,47 @@
       costNote: document.getElementById("cost-note"),
       formula: document.getElementById("formula-output")
     };
+
+    function updateMethodGuide() {
+      const isAdvanced = inputs.sizingMethod.value === "advanced";
+      standardMethodGuide.classList.toggle("is-active", !isAdvanced);
+      advancedMethodGuide.classList.toggle("is-active", isAdvanced);
+    }
+
+    function applyProfileGeometry(profile) {
+      const geometry = PROVISIONED_GEOMETRY[inputs.deploymentType.value];
+      if (profile?.method === "standard" && geometry) {
+        inputs.minPtu.value = geometry.minPtu;
+        inputs.scaleIncrement.value = geometry.scaleIncrement;
+      }
+    }
+
+    function applyModelProfile() {
+      const profile = MODEL_PROFILES[modelProfile.value];
+      if (!profile) {
+        profileStatus.textContent = "Custom model selected. Open advanced capacity overrides and enter the exact Foundry sizing values for the model and deployment type.";
+        updateMethodGuide();
+        return;
+      }
+
+      inputs.sizingMethod.value = profile.method;
+      if (!inputs.laneName.value.trim()) inputs.laneName.value = profile.label;
+      if (profile.method === "advanced") {
+        inputs.inputTpmPerPtu.value = "";
+        inputs.outputWeight.value = "";
+        inputs.minPtu.value = "";
+        inputs.scaleIncrement.value = "";
+        profileStatus.textContent = "GPT-6 profiles use normalized token categories. The calculator will direct you to the exact Foundry capacity method rather than applying the GPT-4o through GPT-5.x formula.";
+      } else {
+        inputs.inputTpmPerPtu.value = profile.inputTpmPerPtu;
+        inputs.outputWeight.value = profile.outputWeight;
+        applyProfileGeometry(profile);
+        profileStatus.textContent = inputs.deploymentType.value
+          ? `${profile.label} capacity settings are filled from the Foundry sizing table for ${inputs.deploymentType.value}. Review advanced overrides only if you have an approved exception.`
+          : `${profile.label} throughput and output weighting are filled from the Foundry sizing table. Select a deployment type to fill its minimum and scale increment.`;
+      }
+      updateMethodGuide();
+    }
 
     function numberFrom(input) {
       const value = input.value.trim();
@@ -1002,10 +1161,16 @@
 
     resetWorksheet.addEventListener("click", () => {
       sizingForm.reset();
+      applyModelProfile();
       setCapacityOutputsToUnknown("Add the exact model request shape and throughput parameters to calculate a PTU allocation.");
       setCostOutputsToUnknown("Enter all six cost fields for a same-lane comparison. Pricing is deliberately not embedded because region, model, currency, and term are not known.");
       outputs.formula.textContent = "Normalized TPM = (peak RPM x input tokens x (1 - cache rate)) + (output-to-input ratio x peak RPM x output tokens)";
     });
+
+    modelProfile.addEventListener("change", applyModelProfile);
+    inputs.deploymentType.addEventListener("change", applyModelProfile);
+    inputs.sizingMethod.addEventListener("change", updateMethodGuide);
+    updateMethodGuide();
 
     function parseCsv(text) {
       const rows = [];
