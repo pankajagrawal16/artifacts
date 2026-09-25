@@ -341,11 +341,21 @@
     .field-help { color: var(--cp-text-soft); font-size: 11px; margin: 6px 0 0; }
     .profile-status { border-left: 3px solid var(--cp-accent); color: var(--cp-text-muted); font-size: 12px; margin: 14px 0 0; padding-left: 11px; }
     .method-guide { border-top: 1px solid var(--cp-border); display: grid; gap: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; }
-    .method-guide > div { border-right: 1px solid var(--cp-border); padding: 13px 14px 0 0; }
-    .method-guide > div + div { border-right: 0; padding-left: 14px; padding-right: 0; }
-    .method-guide h4 { font-size: 12px; margin: 0 0 5px; }
-    .method-guide p { color: var(--cp-text-muted); font-size: 11px; margin: 0; }
-    .method-guide .is-active h4 { color: var(--cp-accent); }
+    .method-explainer { border-right: 1px solid var(--cp-border); padding: 13px 14px 0 0; }
+    .method-explainer + .method-explainer { border-right: 0; padding-left: 14px; padding-right: 0; }
+    .method-explainer summary { cursor: pointer; list-style: none; }
+    .method-explainer summary::-webkit-details-marker { display: none; }
+    .method-summary-title { color: var(--cp-text); display: block; font-size: 12px; font-weight: 800; }
+    .method-summary-note { color: var(--cp-text-soft); display: block; font-size: 11px; font-weight: 600; margin-top: 3px; }
+    .method-explainer[open] summary { margin-bottom: 10px; }
+    .method-explainer p { color: var(--cp-text-muted); font-size: 11px; margin: 0; }
+    .method-explainer p + p { margin-top: 9px; }
+    .method-steps { color: var(--cp-text-muted); font-size: 11px; margin: 9px 0 0; padding-left: 17px; }
+    .method-steps li + li { margin-top: 4px; }
+    .method-formula, .method-example { background: var(--cp-surface-soft); border-left: 2px solid var(--cp-border-strong); color: var(--cp-text-muted); font-family: Consolas, "Courier New", Courier, monospace; font-size: 10px; line-height: 1.5; margin-top: 10px; padding: 9px; }
+    .method-example { border-left-color: var(--cp-accent); font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; }
+    .method-example strong { color: var(--cp-text); }
+    .method-guide .is-active .method-summary-title { color: var(--cp-accent); }
     .advanced-inputs { border: 0; border-top: 1px solid var(--cp-border); margin-top: 20px; padding-top: 15px; }
     .advanced-inputs summary { color: var(--cp-text); cursor: pointer; font-size: 12px; font-weight: 800; }
     .advanced-inputs[open] summary { margin-bottom: 4px; }
@@ -432,8 +442,8 @@
       .hero { padding-top: 42px; }
       .fact-strip, .scenario-grid, .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .method-guide { grid-template-columns: 1fr; }
-      .method-guide > div, .method-guide > div + div { border-bottom: 1px solid var(--cp-border); border-right: 0; padding: 12px 0; }
-      .method-guide > div:last-child { border-bottom: 0; }
+      .method-explainer, .method-explainer + .method-explainer { border-bottom: 1px solid var(--cp-border); border-right: 0; padding: 12px 0; }
+      .method-explainer:last-child { border-bottom: 0; }
       .field-grid, .summary-grid, .cost-grid { grid-template-columns: 1fr; }
       .scenario > p { min-height: 0; }
     }
@@ -754,14 +764,33 @@
             </div>
             <p class="profile-status" id="profile-status">Choose a documented profile to autofill model-specific PTU constants, or use a custom model and open advanced settings.</p>
             <div class="method-guide" aria-label="PTU sizing method explanation">
-              <div id="standard-method-guide">
-                <h4>GPT-4o through GPT-5.x formula</h4>
-                <p>Converts peak input and output into normalized TPM using the selected profile's throughput and output weighting.</p>
-              </div>
-              <div id="advanced-method-guide">
-                <h4>GPT-6 normalized-token method</h4>
-                <p>Weights input, cached input, cache writes, and output separately. Use the exact current Foundry capacity calculator for the selected GPT-6 model.</p>
-              </div>
+              <details class="method-explainer" id="standard-method-guide">
+                <summary>
+                  <span class="method-summary-title">GPT-4o through GPT-5.x formula</span>
+                  <span class="method-summary-note">Use for GPT-4o, GPT-4.1, and GPT-5 profiles</span>
+                </summary>
+                <p>This is the normal worksheet path. It asks: at your busiest minute, how much does the model read and how much does it write?</p>
+                <ol class="method-steps">
+                  <li>Count peak requests, input tokens, and output tokens.</li>
+                  <li>Reduce the input portion by the measured cache rate.</li>
+                  <li>Apply the profile's output weighting, then divide by that profile's capacity per PTU.</li>
+                </ol>
+                <div class="method-formula">normalized TPM = input TPM x (1 - cache rate) + output weight x output TPM</div>
+                <div class="method-example"><strong>Example using GPT-5:</strong> 60 requests/minute x 2,000 input tokens creates 120,000 input TPM. With 500 output tokens per request, output TPM is 30,000. GPT-5 applies an output weight of 8, so the normalized demand is 360,000 TPM. The workbook then rounds this to the supported PTU increment.</div>
+              </details>
+              <details class="method-explainer" id="advanced-method-guide">
+                <summary>
+                  <span class="method-summary-title">GPT-6 normalized-token method</span>
+                  <span class="method-summary-note">Use only for the exact GPT-6 model being deployed</span>
+                </summary>
+                <p>GPT-6 capacity cannot be estimated safely from just one cache percentage and one output multiplier.</p>
+                <ol class="method-steps">
+                  <li>Separate new input from input reused from the prompt cache.</li>
+                  <li>Account for cache writes: the first-time work that makes a prompt segment reusable.</li>
+                  <li>Apply the current GPT-6 model's individual weights for input, cached input, cache writes, and output.</li>
+                </ol>
+                <div class="method-example"><strong>Why the worksheet stops here:</strong> two GPT-6 workloads with the same total token count can need different capacity when one reuses its cache more often. Use the exact current Microsoft Foundry sizing table or capacity calculator for that model rather than treating it as a GPT-5-style estimate.</div>
+              </details>
             </div>
           </fieldset>
 
