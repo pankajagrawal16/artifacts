@@ -197,6 +197,26 @@
     .rule-list svg { color: var(--cp-success); flex: 0 0 17px; margin-top: 2px; height: 17px; width: 17px; }
     .rule-list strong { color: var(--cp-text); }
 
+    .portfolio-verdict { border-bottom: 1px solid var(--cp-border); border-left: 4px solid var(--cp-warning); border-top: 1px solid var(--cp-border); display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr); padding: 20px 0 20px 18px; }
+    .portfolio-verdict h3 { font-size: 20px; margin: 0 0 8px; }
+    .portfolio-verdict p { color: var(--cp-text-muted); font-size: 14px; margin: 0; }
+    .portfolio-verdict strong { color: var(--cp-text); }
+    .portfolio-facts { display: grid; gap: 9px; }
+    .portfolio-fact { border-top: 1px solid var(--cp-border); color: var(--cp-text-muted); font-size: 12px; padding-top: 9px; }
+    .portfolio-fact strong { display: block; font-size: 13px; margin-bottom: 2px; }
+    .portfolio-grid { display: grid; gap: 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 22px; }
+    .portfolio-step { border-top: 2px solid var(--cp-border-strong); padding-top: 14px; }
+    .portfolio-step:nth-child(1) { border-top-color: var(--cp-accent); }
+    .portfolio-step:nth-child(2) { border-top-color: var(--cp-success); }
+    .portfolio-step:nth-child(3) { border-top-color: var(--cp-warning); }
+    .portfolio-step .step-number { color: var(--cp-text-soft); display: block; font-size: 11px; font-weight: 800; margin-bottom: 7px; }
+    .portfolio-step h3 { font-size: 16px; margin: 0 0 7px; }
+    .portfolio-step p { color: var(--cp-text-muted); font-size: 13px; margin: 0; }
+    .portfolio-fleet { background: var(--cp-surface-soft); border: 1px solid var(--cp-border); border-radius: 0.5rem; color: var(--cp-text-muted); display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr); margin-top: 22px; padding: 16px; }
+    .portfolio-fleet h3 { color: var(--cp-text); font-size: 15px; margin: 0 0 6px; }
+    .portfolio-fleet p { font-size: 13px; margin: 0; }
+    .portfolio-math { border-left: 2px solid var(--cp-warning); color: var(--cp-text); font-family: Consolas, "Courier New", Courier, monospace; font-size: 12px; line-height: 1.55; padding-left: 12px; }
+
     .architecture-frame {
       background: var(--cp-bg-elevated);
       border: 1px solid var(--cp-border);
@@ -450,7 +470,7 @@
       .reveal { animation: none; }
     }
     @media (max-width: 900px) {
-      .hero-layout, .recommendation, .calculator-shell { grid-template-columns: 1fr; }
+      .hero-layout, .recommendation, .calculator-shell, .portfolio-verdict, .portfolio-fleet { grid-template-columns: 1fr; }
       .architecture-grid { grid-template-columns: 1fr; }
       .flow-arrow { min-height: 20px; transform: rotate(90deg); }
       .lane-stack { grid-template-columns: 1fr; }
@@ -462,6 +482,7 @@
       .nav-list { justify-content: flex-start; }
       .hero { padding-top: 42px; }
       .fact-strip, .scenario-grid, .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .portfolio-grid { grid-template-columns: 1fr; }
       .method-guide { grid-template-columns: 1fr; }
       .method-explainer, .method-explainer + .method-explainer { border-bottom: 1px solid var(--cp-border); border-right: 0; padding: 12px 0; }
       .method-explainer:last-child { border-bottom: 0; }
@@ -491,6 +512,7 @@
       <nav class="nav-list" aria-label="Page sections">
         <a href="#overview">Overview</a>
         <a href="#architecture">Architecture</a>
+        <a href="#portfolio-decision">Portfolio decision</a>
         <a href="#citadel-architecture">Citadel diagram</a>
         <a href="#calculator">PTU estimate</a>
         <a href="#evidence">Evidence</a>
@@ -589,6 +611,52 @@
           </ul>
           <p class="scenario-footer">Data Zone PTU quota and reservation coverage still require matching deployment type and region. Quota is not a capacity guarantee.</p>
         </article>
+      </div>
+    </section>
+
+    <section class="section" id="portfolio-decision">
+      <div class="section-head">
+        <p class="eyebrow">Portfolio decision</p>
+        <h2>Use Standard for the seasonal portfolio; earn PTU one deployment traffic lane at a time.</h2>
+        <p>The current usage pattern is concentrated on working days and academic peaks, then drops sharply during holidays. That is a cost-control problem before it is a PTU-sizing problem.</p>
+      </div>
+
+      <div class="portfolio-verdict">
+        <div>
+          <h3>Current recommendation: Standard-first, with no portfolio-wide PTU baseline.</h3>
+          <p>Use token budgets, output caps, routing, and approved spillover to make costs predictable across the distributed portfolio. Introduce PTU only for a measured, latency-sensitive GPT text lane whose stable demand and discounted reservation rate make the capacity commitment defensible.</p>
+        </div>
+        <div class="portfolio-facts" aria-label="Current portfolio decision facts">
+          <div class="portfolio-fact"><strong>Cost predictability</strong>Control tokens by consumer and time period; do not pay for unused all-day capacity to create a budget ceiling.</div>
+          <div class="portfolio-fact"><strong>Operational reality</strong>A shared Global reservation can cover compatible deployments across scope, but each provisioned deployment still has its own capacity, minimum, and maintenance work.</div>
+          <div class="portfolio-fact"><strong>Decision trigger</strong>Use PTU when measured utilization, latency need, and an actual reservation quote all pass the same-lane economics check.</div>
+        </div>
+      </div>
+
+      <div class="portfolio-grid">
+        <article class="portfolio-step">
+          <span class="step-number">01 - CONTROL</span>
+          <h3>Make Standard predictable</h3>
+          <p>Set token budgets by subscription, application, department, or model; cap output tokens; route routine work to the appropriate model; and reserve image or embedding batch work for controlled schedules where possible.</p>
+        </article>
+        <article class="portfolio-step">
+          <span class="step-number">02 - PILOT</span>
+          <h3>Choose one PTU candidate</h3>
+          <p>Select one latency-sensitive GPT text lane with a stable demand floor. Benchmark representative traffic, observe Provisioned utilization V2, and keep Standard spillover for exceptional bursts.</p>
+        </article>
+        <article class="portfolio-step">
+          <span class="step-number">03 - COMMIT</span>
+          <h3>Reserve only the stable floor</h3>
+          <p>Create and validate the deployment first. Purchase a matching Global or Data Zone reservation only after capacity is confirmed and the reservation quote beats the lane's PayGo break-even point.</p>
+        </article>
+      </div>
+
+      <div class="portfolio-fleet">
+        <div>
+          <h3>Resolve the fleet-count question before calculating a portfolio PTU total.</h3>
+          <p>Does “12 GPT models x 2 filters” mean 24 deployment traffic lanes across the whole platform, or 24 lanes in each of the 10 subscriptions? Image and embedding deployments must be counted separately because their model minimums and economics can differ.</p>
+        </div>
+        <p class="portfolio-math">Illustrative GPT-style floor only:\n24 deployments x 15 PTUs = 360 PTUs\n10 subscriptions x 24 deployments x 15 PTUs = 3,600 PTUs\n\nConfirm the actual deployment count and model-specific minimums before treating either as a budget.</p>
       </div>
     </section>
 
