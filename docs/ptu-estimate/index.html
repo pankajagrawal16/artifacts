@@ -503,7 +503,7 @@
         <div class="reveal">
           <p class="eyebrow">Capacity and cost framing</p>
           <h1>Design for the academic peak without paying for it every quiet day.</h1>
-          <p class="hero-copy">The service is a <strong>shared AI platform</strong>, not one flat workload. The decision is therefore not simply PayGo versus PTU: it is which <strong>model and content-policy lanes</strong> warrant a stable provisioned baseline, and which should remain on token billing with controlled spillover.</p>
+          <p class="hero-copy">The service is a <strong>shared AI platform</strong>, not one flat workload. The decision is therefore not simply PayGo versus PTU: it is which <strong>deployment traffic lanes</strong> warrant a stable provisioned baseline, and which should remain on token billing with controlled spillover.</p>
         </div>
         <aside class="hero-note reveal delay-1" aria-label="Decision status">
           <h2>Decision status: sizing data pending</h2>
@@ -531,13 +531,13 @@
           <p>Segment the portfolio by observed demand. Assign stable, latency-sensitive lanes a measured PTU baseline. Keep low-volume, newly released, retiring, or highly seasonal lanes on Standard. Configure approved spillover from provisioned Azure OpenAI deployments to Standard for exceptional bursts.</p>
         </div>
         <ul class="rule-list">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span><strong>Size every distinct model and policy lane independently.</strong> Do not divide the 42B-token total evenly across 24 deployments.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span><strong>Size every separate deployment traffic lane independently.</strong> Do not divide the 42B-token total evenly across 24 deployments.</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span><strong>Separate deployment operations from reservation billing.</strong> A reservation can cover matching PTU deployments across scope; it is not purchased for one model.</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span><strong>Prove baseline demand first.</strong> Use hourly and per-minute telemetry plus a production-shaped benchmark before reserving a long-term PTU quantity.</span></li>
         </ul>
       </div>
 
-      <div class="architecture-frame" role="img" aria-label="Hybrid architecture with Fjordlight AI Service routing traffic by model and policy lane to a measured provisioned baseline or Standard spillover">
+      <div class="architecture-frame" role="img" aria-label="Hybrid architecture with Fjordlight AI Service routing deployment traffic lanes to a measured provisioned baseline or Standard spillover">
         <p class="architecture-label">Target traffic pattern</p>
         <div class="architecture-grid">
           <article class="node">
@@ -549,7 +549,7 @@
           <article class="node node-accent">
             <p class="node-kicker">Shared service</p>
             <h3 class="node-title">Fjordlight router</h3>
-            <p class="node-copy">Routes by requested model version, approved content-policy lane, deployment health, and capacity state.</p>
+            <p class="node-copy">Routes by requested model version, approved content policy, deployment health, and capacity state.</p>
           </article>
           <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
           <div class="lane-stack">
@@ -594,8 +594,8 @@
     <section class="section" id="citadel-architecture">
       <div class="section-head">
         <p class="eyebrow">Foundry Citadel recommendation</p>
-        <h2>Use Citadel to govern the AI service across model and policy lanes.</h2>
-        <p>Citadel's layered governance pattern provides a central control point for shared AI traffic while retaining separate model and policy lanes for the sector.</p>
+        <h2>Use Citadel to govern the AI service across deployment traffic lanes.</h2>
+        <p>Citadel's layered governance pattern provides a central control point for shared AI traffic while retaining separately sized deployment traffic lanes for the sector.</p>
       </div>
 
       <div class="citadel-diagram">
@@ -731,20 +731,20 @@
           </tbody>
         </table>
       </div>
-      <p class="question-table-note">Answer these separately for every exact model and policy lane. Leave an unavailable value blank rather than substituting a portfolio average.</p>
+      <p class="question-table-note">Answer these separately for every exact deployment traffic lane. Leave an unavailable value blank rather than substituting a portfolio average.</p>
       <div class="data-grid">
         <article class="data-band">
           <h3>Known from the brief</h3>
           <ul class="data-list">
             <li><svg class="known" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span><strong>Material demand:</strong> 42B tokens YTD and an approximately 60B annual run rate.</span></li>
             <li><svg class="known" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span><strong>High seasonality:</strong> peak day is about 10 times the quietest day; weekend and holiday demand is low.</span></li>
-            <li><svg class="known" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span><strong>Portfolio behavior:</strong> multiple models and content-policy lanes run concurrently during gradual migrations.</span></li>
+            <li><svg class="known" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span><strong>Portfolio behavior:</strong> multiple models and content-policy configurations can share or use separate deployment traffic lanes during gradual migrations.</span></li>
           </ul>
         </article>
         <article class="data-band">
           <h3>Required for a signed-off estimate</h3>
           <ul class="data-list">
-            <li><svg class="needed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span><strong>Per model/version and policy lane:</strong> peak RPM, input tokens per call, output tokens per call, and cache rate, at one-minute granularity for exam-week peaks.</span></li>
+            <li><svg class="needed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span><strong>Per deployment traffic lane:</strong> peak RPM, input tokens per call, output tokens per call, and cache rate, at one-minute granularity for exam-week peaks.</span></li>
             <li><svg class="needed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span><strong>Deployment facts:</strong> exact model versions, candidate region, Global versus Data Zone choice, PTU quota, and live capacity availability.</span></li>
             <li><svg class="needed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg><span><strong>Commercial inputs:</strong> billing currency, hourly or reservation PTU price, Standard input/output token prices, and eligible reservation scope.</span></li>
           </ul>
@@ -777,7 +777,7 @@
     <section class="section" id="calculator">
       <div class="section-head">
         <p class="eyebrow">PTU estimate</p>
-        <h2>Size one model and content-policy lane at a time.</h2>
+        <h2>Size one deployment traffic lane at a time.</h2>
         <p>The worksheet implements Microsoft's published manual formula for the GPT-4o through GPT-5.x-style sizing method. It deliberately begins empty: the values must come from Fjordlight's extracted telemetry and the exact model/version table in Microsoft Learn.</p>
       </div>
 
@@ -789,11 +789,11 @@
           <div class="scenario-preset" aria-labelledby="assumed-gpt5-scenario">
             <div class="scenario-preset-head">
               <div>
-                <p class="scenario-preset-kicker">Assumed capacity scenario</p>
+                <p class="scenario-preset-kicker">Assumed scenario calculator</p>
                 <h4 id="assumed-gpt5-scenario">GPT-5 Global baseline with Standard spillover</h4>
                 <p class="scenario-preset-copy">Illustrative exam-period scenario for a Sweden Central deployment. It is not a customer forecast or a reservation recommendation.</p>
               </div>
-              <button class="button secondary" id="load-gpt5-scenario" type="button" title="Load the assumed GPT-5 Sweden Central scenario">Load scenario</button>
+              <button class="button secondary" id="load-gpt5-scenario" type="button" title="Load and calculate the assumed GPT-5 Sweden Central scenario">Load and calculate 315 PTUs</button>
             </div>
             <div class="scenario-assumptions">
               <span class="scenario-assumption"><strong>gpt-5 (2025-08-07)</strong>Exact model profile</span>
@@ -803,13 +803,13 @@
               <span class="scenario-assumption"><strong>30% prompt-cache rate</strong>Peak input cache assumption</span>
               <span class="scenario-assumption"><strong>10% headroom + spillover</strong>Standard spillover accepted for exceptional bursts</span>
             </div>
-            <p class="scenario-output">Expected result: <strong>315 PTUs</strong> for the sustained baseline; exceptional traffic can use the approved Standard spillover path.</p>
+            <p class="scenario-output"><strong>Calculation:</strong> (250 x 2,000 x 70%) + (8 x 250 x 500) = 1,350,000 normalized TPM. With 10% headroom, this rounds to <strong>315 PTUs</strong>; exceptional traffic can use the approved Standard spillover path.</p>
           </div>
 
           <fieldset>
             <legend>1. Choose model and deployment</legend>
             <div class="field-grid one">
-              <label for="lane-name">Model and policy lane<input id="lane-name" type="text" placeholder="Example: exact model + content policy" autocomplete="off"></label>
+              <label for="lane-name">Deployment traffic lane<input id="lane-name" type="text" placeholder="Example: GPT-5 Global deployment" autocomplete="off"></label>
             </div>
             <div class="field-grid">
               <label for="model-profile">Documented model profile<select id="model-profile"><option value="">Custom model - enter advanced settings</option><option value="gpt-4o">gpt-4o (2024-05-13)</option><option value="gpt-4o-mini">gpt-4o-mini</option><option value="gpt-4-1">gpt-4.1 (2025-04-14)</option><option value="gpt-4-1-mini">gpt-4.1-mini (2025-04-14)</option><option value="gpt-4-1-nano">gpt-4.1-nano (2025-04-14)</option><option value="gpt-5">gpt-5 (2025-08-07)</option><option value="gpt-5-mini">gpt-5-mini (2025-08-07)</option><option value="gpt-6-astra">gpt-6-astra (2026-09-03)</option><option value="gpt-6-sol">gpt-6-sol (2026-09-22)</option></select></label>
@@ -1251,7 +1251,7 @@
         headroom: numberFrom(inputs.headroom)
       };
       const required = [
-        ["model and policy lane", laneName],
+        ["deployment traffic lane", laneName],
         ["deployment type", deploymentType],
         ["short-context new input TPM", values.shortInput],
         ["short-context cached input TPM", values.shortCachedInput],
@@ -1327,7 +1327,7 @@
       setSummaryLabels();
 
       const required = [
-        ["model and policy lane", laneName],
+        ["deployment traffic lane", laneName],
         ["deployment type", deploymentType],
         ["sizing method", sizingMethod],
         ["peak RPM", values.peakRpm],
@@ -1536,7 +1536,7 @@
         headroom: csvNumber(row, "headroom_pct")
       };
       const required = [
-        ["model and policy lane", laneName],
+        ["deployment traffic lane", laneName],
         ["model version", csvValue(row, "model_version")],
         ["candidate deployment type", deploymentType],
         ["short-context new input TPM", values.shortInput],
@@ -1598,7 +1598,7 @@
       }
 
       const required = [
-        ["model and policy lane", laneName],
+        ["deployment traffic lane", laneName],
         ["model version", csvValue(row, "model_version")],
         ["candidate deployment type", deploymentType],
         ["peak RPM", values.peakRpm],
