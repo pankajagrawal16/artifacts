@@ -326,6 +326,7 @@
     .panel-title svg { color: var(--cp-accent); height: 19px; width: 19px; }
     .panel-intro { color: var(--cp-text-muted); font-size: 13px; margin-bottom: 20px; }
     .scenario-preset { border-bottom: 1px solid var(--cp-border); margin-bottom: 20px; padding-bottom: 18px; }
+    .scenario-preset + .scenario-preset { border-top: 1px solid var(--cp-border); padding-top: 18px; }
     .scenario-preset-head { align-items: flex-start; display: flex; gap: 14px; justify-content: space-between; }
     .scenario-preset-kicker { color: var(--cp-accent); font-size: 10px; font-weight: 800; margin: 0 0 5px; text-transform: uppercase; }
     .scenario-preset h4 { font-size: 14px; margin: 0; }
@@ -806,6 +807,28 @@
             <p class="scenario-output"><strong>Calculation:</strong> (250 x 2,000 x 70%) + (8 x 250 x 500) = 1,350,000 normalized TPM. With 10% headroom, this rounds to <strong>315 PTUs</strong>; exceptional traffic can use the approved Standard spillover path.</p>
           </div>
 
+          <div class="scenario-preset" aria-labelledby="assumed-gpt6-scenario">
+            <div class="scenario-preset-head">
+              <div>
+                <p class="scenario-preset-kicker">Assumed scenario calculator</p>
+                <h4 id="assumed-gpt6-scenario">GPT-6 Sol Global baseline with Standard spillover</h4>
+                <p class="scenario-preset-copy">Illustrative Sweden Central scenario. It uses Microsoft&apos;s published GPT-6 Sol normalization and a clearly labelled commercial illustration, not a price quote.</p>
+              </div>
+              <button class="button secondary" id="load-gpt6-scenario" type="button" title="Load and calculate the assumed GPT-6 Sol scenario">Load and calculate 200 PTUs</button>
+            </div>
+            <div class="scenario-assumptions">
+              <span class="scenario-assumption"><strong>gpt-6-sol (2026-09-22)</strong>Exact model profile</span>
+              <span class="scenario-assumption"><strong>Sweden Central / Global</strong>Candidate region and deployment type</span>
+              <span class="scenario-assumption"><strong>250k / 100k / 25k / 50k TPM</strong>Short: new input / cached input / cache write / output</span>
+              <span class="scenario-assumption"><strong>No long-context tokens</strong>Assumed for this illustrative workload</span>
+              <span class="scenario-assumption"><strong>10% headroom + spillover</strong>Standard spillover accepted for exceptional bursts</span>
+              <span class="scenario-assumption"><strong>40% average utilization</strong>Assumed monthly use over a 30-day month</span>
+              <span class="scenario-assumption"><strong>USD 260/PTU-month</strong>Microsoft example price assumption</span>
+              <span class="scenario-assumption"><strong>USD 2/M normalized tokens</strong>GPT-6 Sol Global Standard baseline assumption</span>
+            </div>
+            <p class="scenario-output"><strong>Capacity:</strong> (250,000 x 1) + (100,000 x 0.1) + (25,000 x 1.25) + (50,000 x 5) = 541,250 normalized TPM. With 10% headroom, this rounds to <strong>200 PTUs</strong>. <strong>Result costs:</strong> USD 52,000 fixed PTU cost and USD 20,736 Standard PayGo cost under the stated utilization assumption.</p>
+          </div>
+
           <fieldset>
             <legend>1. Choose model and deployment</legend>
             <div class="field-grid one">
@@ -991,6 +1014,7 @@
     const importResultsBody = document.getElementById("import-results-body");
     const modelProfile = document.getElementById("model-profile");
     const loadGpt5Scenario = document.getElementById("load-gpt5-scenario");
+    const loadGpt6Scenario = document.getElementById("load-gpt6-scenario");
     const profileStatus = document.getElementById("profile-status");
     const standardMethodGuide = document.getElementById("standard-method-guide");
     const advancedMethodGuide = document.getElementById("advanced-method-guide");
@@ -1138,6 +1162,27 @@
       cacheRate: 30,
       headroom: 10
     };
+    const GPT6_SOL_GLOBAL_SCENARIO = {
+      laneName: "Assumed GPT-6 Sol exam-peak baseline",
+      modelProfile: "gpt-6-sol",
+      deploymentType: "Global Provisioned",
+      region: "swedencentral",
+      currency: "USD",
+      shortInputTpm: 250000,
+      shortCachedInputTpm: 100000,
+      shortCacheWriteTpm: 25000,
+      shortOutputTpm: 50000,
+      longInputTpm: 0,
+      longCachedInputTpm: 0,
+      longCacheWriteTpm: 0,
+      longOutputTpm: 0,
+      headroom: 10,
+      ptuMonthlyRate: 260,
+      standardNormalizedTokenRate: 2,
+      averageUtilizationPct: 40,
+      daysPerMonth: 30
+    };
+    let activeGpt6ScenarioPricing = null;
 
     function updateMethodGuide() {
       const isAdvanced = inputs.sizingMethod.value === "advanced";
@@ -1220,6 +1265,23 @@
       return { shortContextTpm, longContextTpm, normalizedTpm, rawPtu, withHeadroom, allocatedPtu };
     }
 
+    function calculateGpt6ScenarioCosts(profile, allocatedPtu) {
+      const pricing = activeGpt6ScenarioPricing;
+      if (!pricing || pricing.modelProfile !== modelProfile.value) {
+        setCostOutputsToUnknown("GPT-6 capacity is calculated. A same-lane PayGo comparison needs exact monthly token categories and pricing meters, which are not part of this capacity-only calculation.");
+        return;
+      }
+
+      const monthlyNormalizedTokensM = allocatedPtu * profile.normalizedTpmPerPtu * 60 * 24 * pricing.daysPerMonth * (pricing.averageUtilizationPct / 100) / 1000000;
+      const fixedPtuCost = allocatedPtu * pricing.ptuMonthlyRate;
+      const paygoCost = monthlyNormalizedTokensM * pricing.standardNormalizedTokenRate;
+      const difference = fixedPtuCost - paygoCost;
+      const prefix = `${pricing.currency} `;
+      outputs.ptuCost.textContent = `${prefix}${formatNumber(fixedPtuCost, 2)}`;
+      outputs.paygoCost.textContent = `${prefix}${formatNumber(paygoCost, 2)}`;
+      outputs.costNote.textContent = `Assumed GPT-6 Sol illustration: ${formatNumber(monthlyNormalizedTokensM, 2)}M normalized tokens at ${pricing.averageUtilizationPct}% average utilization across ${pricing.daysPerMonth} days. Fixed cost assumes ${prefix}${formatNumber(pricing.ptuMonthlyRate, 2)} per PTU-month; Standard PayGo assumes ${prefix}${formatNumber(pricing.standardNormalizedTokenRate, 2)} per 1M normalized tokens. ${prefix}${formatNumber(Math.abs(difference), 2)} ${difference > 0 ? "higher fixed PTU cost than PayGo" : "lower fixed PTU cost than PayGo"}. Not a price quote.`;
+    }
+
     function setSummaryLabels(inputLabel = "Input TPM", outputLabel = "Output TPM") {
       summaryLabels.input.textContent = inputLabel;
       summaryLabels.output.textContent = outputLabel;
@@ -1287,7 +1349,7 @@
       outputs.allocatedPtu.innerHTML = `${formatNumber(capacity.allocatedPtu, 2)} <span>PTUs</span>`;
       outputs.capacityDetail.textContent = `Raw requirement ${formatNumber(capacity.rawPtu, 2)} PTUs; ${formatNumber(values.headroom, 2)}% approved headroom makes ${formatNumber(capacity.withHeadroom, 2)} PTUs before the ${formatNumber(values.scaleIncrement, 2)}-PTU scale increment and ${formatNumber(values.minPtu, 2)}-PTU minimum.`;
       outputs.formula.textContent = `Normalized TPM = (${formatNumber(values.shortInput)} x 1) + (${formatNumber(values.shortCachedInput)} x 0.1) + (${formatNumber(values.shortCacheWrite)} x 1.25) + (${formatNumber(values.shortOutput)} x 5) + (${formatNumber(values.longInput)} x 2) + (${formatNumber(values.longCachedInput)} x 0.2) + (${formatNumber(values.longCacheWrite)} x 2.5) + (${formatNumber(values.longOutput)} x 7.5) = ${formatNumber(capacity.normalizedTpm)}`;
-      setCostOutputsToUnknown("GPT-6 capacity is calculated. A same-lane PayGo comparison needs exact monthly token categories and pricing meters, which are not part of this capacity-only implementation.");
+      calculateGpt6ScenarioCosts(profile, capacity.allocatedPtu);
     }
 
     function setCostOutputsToUnknown(message) {
@@ -1400,6 +1462,7 @@
     });
 
     loadGpt5Scenario.addEventListener("click", () => {
+      activeGpt6ScenarioPricing = null;
       modelProfile.value = GPT5_GLOBAL_SCENARIO.modelProfile;
       inputs.deploymentType.value = GPT5_GLOBAL_SCENARIO.deploymentType;
       applyModelProfile();
@@ -1414,7 +1477,35 @@
       calculate();
     });
 
+    loadGpt6Scenario.addEventListener("click", () => {
+      modelProfile.value = GPT6_SOL_GLOBAL_SCENARIO.modelProfile;
+      inputs.deploymentType.value = GPT6_SOL_GLOBAL_SCENARIO.deploymentType;
+      applyModelProfile();
+      inputs.laneName.value = GPT6_SOL_GLOBAL_SCENARIO.laneName;
+      inputs.region.value = GPT6_SOL_GLOBAL_SCENARIO.region;
+      inputs.currency.value = GPT6_SOL_GLOBAL_SCENARIO.currency;
+      inputs.gpt6ShortInputTpm.value = GPT6_SOL_GLOBAL_SCENARIO.shortInputTpm;
+      inputs.gpt6ShortCachedInputTpm.value = GPT6_SOL_GLOBAL_SCENARIO.shortCachedInputTpm;
+      inputs.gpt6ShortCacheWriteTpm.value = GPT6_SOL_GLOBAL_SCENARIO.shortCacheWriteTpm;
+      inputs.gpt6ShortOutputTpm.value = GPT6_SOL_GLOBAL_SCENARIO.shortOutputTpm;
+      inputs.gpt6LongInputTpm.value = GPT6_SOL_GLOBAL_SCENARIO.longInputTpm;
+      inputs.gpt6LongCachedInputTpm.value = GPT6_SOL_GLOBAL_SCENARIO.longCachedInputTpm;
+      inputs.gpt6LongCacheWriteTpm.value = GPT6_SOL_GLOBAL_SCENARIO.longCacheWriteTpm;
+      inputs.gpt6LongOutputTpm.value = GPT6_SOL_GLOBAL_SCENARIO.longOutputTpm;
+      inputs.headroom.value = GPT6_SOL_GLOBAL_SCENARIO.headroom;
+      activeGpt6ScenarioPricing = {
+        modelProfile: GPT6_SOL_GLOBAL_SCENARIO.modelProfile,
+        currency: GPT6_SOL_GLOBAL_SCENARIO.currency,
+        ptuMonthlyRate: GPT6_SOL_GLOBAL_SCENARIO.ptuMonthlyRate,
+        standardNormalizedTokenRate: GPT6_SOL_GLOBAL_SCENARIO.standardNormalizedTokenRate,
+        averageUtilizationPct: GPT6_SOL_GLOBAL_SCENARIO.averageUtilizationPct,
+        daysPerMonth: GPT6_SOL_GLOBAL_SCENARIO.daysPerMonth
+      };
+      calculate();
+    });
+
     resetWorksheet.addEventListener("click", () => {
+      activeGpt6ScenarioPricing = null;
       sizingForm.reset();
       applyModelProfile();
       setCapacityOutputsToUnknown("Add the exact model request shape and throughput parameters to calculate a PTU allocation.");
@@ -1422,8 +1513,27 @@
       outputs.formula.textContent = "Normalized TPM = (peak RPM x input tokens x (1 - cache rate)) + (output-to-input ratio x peak RPM x output tokens)";
     });
 
-    modelProfile.addEventListener("change", applyModelProfile);
-    inputs.deploymentType.addEventListener("change", applyModelProfile);
+    modelProfile.addEventListener("change", () => {
+      activeGpt6ScenarioPricing = null;
+      applyModelProfile();
+    });
+    inputs.deploymentType.addEventListener("change", () => {
+      activeGpt6ScenarioPricing = null;
+      applyModelProfile();
+    });
+    [
+      inputs.gpt6ShortInputTpm,
+      inputs.gpt6ShortCachedInputTpm,
+      inputs.gpt6ShortCacheWriteTpm,
+      inputs.gpt6ShortOutputTpm,
+      inputs.gpt6LongInputTpm,
+      inputs.gpt6LongCachedInputTpm,
+      inputs.gpt6LongCacheWriteTpm,
+      inputs.gpt6LongOutputTpm,
+      inputs.headroom
+    ].forEach(input => input.addEventListener("input", () => {
+      activeGpt6ScenarioPricing = null;
+    }));
     inputs.sizingMethod.addEventListener("change", updateMethodGuide);
     updateMethodGuide();
 
