@@ -285,6 +285,13 @@
     .data-list .needed { color: var(--cp-warning); }
     .data-list strong { color: var(--cp-text); }
     .data-note { border-left: 3px solid var(--cp-warning); color: var(--cp-text-muted); font-size: 13px; margin: 20px 0 0; padding-left: 12px; }
+    .question-table-wrap { margin-top: 20px; }
+    .question-table { border-collapse: collapse; min-width: 760px; width: 100%; }
+    .question-table th { background: var(--cp-surface-soft); color: var(--cp-text-muted); font-size: 11px; font-weight: 800; padding: 10px; text-align: left; text-transform: uppercase; }
+    .question-table td { border-top: 1px solid var(--cp-border); color: var(--cp-text-muted); font-size: 13px; line-height: 1.45; padding: 12px 10px; vertical-align: top; }
+    .question-table td:first-child { color: var(--cp-text); font-weight: 750; width: 27%; }
+    .question-table td:last-child { color: var(--cp-text-soft); font-size: 12px; width: 18%; }
+    .question-table-note { color: var(--cp-text-soft); font-size: 12px; margin: 10px 0 0; }
     .template-band { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 0.625rem; margin-top: 20px; padding: 20px; }
     .template-band h3 { font-size: 16px; margin-bottom: 8px; }
     .template-band p { color: var(--cp-text-muted); font-size: 13px; margin-bottom: 12px; }
@@ -697,6 +704,23 @@
         <h2>What can be concluded now, and what must arrive before an actual price or PTU commitment.</h2>
         <p>The 42B-token total validates that a provisioned option is worth analyzing. It does not disclose the per-minute peak, request shape, cache behavior, or model mix required to estimate capacity.</p>
       </div>
+      <div class="table-wrap question-table-wrap">
+        <table class="question-table">
+          <thead>
+            <tr><th>Question to answer</th><th>What to provide</th><th>Needed for</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Which exact lane are we sizing?</td><td>Exact model and version, content-policy configuration, subscription/resource, candidate deployment type, and region.</td><td>Capacity and price</td></tr>
+            <tr><td>What happens in the busiest one-minute window?</td><td>Peak requests per minute and how long that peak persists. Use an exam-period or other representative high-demand window.</td><td>Capacity</td></tr>
+            <tr><td>What is the request shape for GPT-4o through GPT-5.x?</td><td>Average and p95 input tokens per request, output tokens per request, and prompt-cache rate at that same peak.</td><td>Standard formula</td></tr>
+            <tr><td>What is the token mix for GPT-6?</td><td>Peak TPM for short and long context: new input, cached input, cache write, and output. Each token belongs in one category only.</td><td>GPT-6 normalized method</td></tr>
+            <tr><td>What service behavior is acceptable?</td><td>Latency target, whether 429 responses are acceptable, concurrent/streaming workload behavior, and whether Standard spillover is allowed.</td><td>Capacity design</td></tr>
+            <tr><td>Can the selected deployment be created?</td><td>Available model/version in the region, PTU quota, live capacity availability, approved headroom, and deployment minimum/increment.</td><td>Deployable capacity</td></tr>
+            <tr><td>What commercial comparison is required?</td><td>Currency, deployed hours per month, PTU and Standard PayGo rates or meter SKUs, reservation term, scope, and eligible discount.</td><td>Cost comparison</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="question-table-note">Answer these separately for every exact model and policy lane. Leave an unavailable value blank rather than substituting a portfolio average.</p>
       <div class="data-grid">
         <article class="data-band">
           <h3>Known from the brief</h3>
