@@ -21,9 +21,14 @@ Reference documentation and architecture guidance.
 
 | Document | Description |
 |---|---|
+| [`foundry-snowflake/`](docs/foundry-snowflake/) | Interactive Microsoft Foundry + Snowflake MCP walkthrough, including PAT, native OAuth, and Entra OBO flows; images and diagram renderer are embedded |
 | `ingress-digest/` | Azure ingress architecture options with mapping to Azure Learn and Well-Architected guidance |
 | `ptu-estimate/` | Microsoft Foundry PTU architecture decision workbook and per-model capacity calculator |
 | `real-time-quota/` | Azure quota sizing guidance for the `gpt-realtime` model |
+
+The Foundry + Snowflake walkthrough uses example deployment identifiers, not live
+tenant or account details. After GitHub Pages deployment, it is available at
+[Foundry + Snowflake](https://pankajagrawal16.github.io/artifacts/foundry-snowflake/).
 
 ---
 
