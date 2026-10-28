@@ -2,6 +2,9 @@
 
 A growing collection of helpful utilities, scripts, and reference documentation for working with Azure.
 
+[Browse all artifacts](https://pankaagr.cloud/artifacts/) for the published walkthroughs,
+calculators and scripts.
+
 ## Contents
 
 ### `scripts/`
