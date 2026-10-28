@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Harbour Point Foundry IQ solution architecture and demonstrated proof-of-concept outcomes.">
+  <link rel="icon" href="data:,">
+  <title>Harbour Point | Foundry IQ Solution</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme = param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--cp-surface-soft); color: var(--cp-text); font: 14px/1.5 "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; }
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { color: inherit; cursor: pointer; }
+    button:focus-visible, a:focus-visible { outline: 2px solid var(--cp-accent); outline-offset: 3px; }
+    a { color: var(--cp-link); }
+    code { font: 12px/1.5 Consolas, "Courier New", monospace; overflow-wrap: anywhere; }
+    [hidden] { display: none !important; }
+    .topbar { height: 60px; background: var(--cp-surface); border-bottom: 1px solid var(--cp-border); display: flex; align-items: center; gap: 16px; padding: 0 24px; position: sticky; top: 0; z-index: 20; }
+    .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; font-size: 17px; font-weight: 600; }
+    .brand i { color: var(--cp-accent); width: 25px; height: 25px; }
+    .top-divider { height: 22px; border-left: 1px solid var(--cp-border); }
+    .top-context { color: var(--cp-text-muted); font-size: 13px; }
+    .top-actions { margin-left: auto; display: flex; gap: 6px; }
+    .settings-panel { position: fixed; inset: 64px 16px auto auto; width: min(280px, calc(100vw - 32px)); padding: 18px; border: 1px solid var(--cp-border); border-radius: 6px; background: var(--cp-surface); color: var(--cp-text); box-shadow: var(--cp-shadow); }
+    .settings-panel h2 { font-size: 14px; margin-bottom: 14px; }
+    .settings-panel label { display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer; }
+    .settings-panel input { width: 16px; height: 16px; accent-color: var(--cp-accent); margin: 0; }
+    #readiness[data-user-hidden="true"] { display: none !important; }
+    .icon-button { width: 36px; height: 36px; flex: 0 0 36px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; border-radius: 6px; }
+    .icon-button:hover { background: var(--cp-surface-soft); border-color: var(--cp-border); }
+    .icon-button svg { width: 18px; height: 18px; }
+    .shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: calc(100vh - 60px); }
+    .sidebar { background: var(--cp-surface); border-right: 1px solid var(--cp-border); padding: 24px 12px; position: sticky; top: 60px; height: calc(100vh - 60px); display: flex; flex-direction: column; }
+    .project { padding: 0 12px 22px; border-bottom: 1px solid var(--cp-border); margin-bottom: 20px; }
+    .project-label, .eyebrow { color: var(--cp-text-soft); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0; }
+    .project strong { display: block; font-size: 16px; margin: 6px 0 2px; }
+    .project small { color: var(--cp-text-muted); font-size: 11px; }
+    .nav-group { margin: 0 12px 9px; color: var(--cp-text-soft); font-size: 11px; font-weight: 600; }
+    .nav-item { width: 100%; border: 0; background: transparent; border-radius: 5px; display: flex; align-items: center; gap: 12px; padding: 11px 12px; text-align: left; margin-bottom: 4px; font-size: 13px; }
+    .nav-item svg { width: 18px; height: 18px; color: var(--cp-text-muted); flex-shrink: 0; }
+    .nav-item:hover { background: var(--cp-surface-soft); }
+    .nav-item[aria-current="page"] { background: var(--cp-accent-soft); color: var(--cp-accent); font-weight: 600; }
+    .nav-item[aria-current="page"] svg { color: var(--cp-accent); }
+    .nav-number { margin-left: auto; color: var(--cp-text-soft); font: 10px Consolas, monospace; }
+    .sidebar-footer { margin-top: auto; padding: 20px 12px 0; color: var(--cp-text-soft); font-size: 11px; }
+    .workspace { min-width: 0; padding: 22px 40px 30px; max-width: 1640px; width: 100%; margin: 0 auto; }
+    .breadcrumb { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--cp-text-soft); margin-bottom: 26px; }
+    .breadcrumb svg { height: 12px; width: 12px; }
+    .page-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 26px; }
+    h1 { font-size: 32px; line-height: 1.18; font-weight: 600; margin: 8px 0 10px; max-width: 780px; }
+    h2 { font-size: 18px; font-weight: 600; line-height: 1.3; margin: 0 0 10px; }
+    h3 { font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+    p { margin: 0 0 12px; }
+    .lead { color: var(--cp-text-muted); max-width: 760px; font-size: 15px; }
+    .status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .verified { color: var(--cp-success); }
+    .partial { color: var(--cp-warning); }
+    .pending { color: var(--cp-text-muted); }
+    .page-badge { border: 1px solid var(--cp-border); padding: 7px 10px; border-radius: 5px; font-size: 11px; white-space: nowrap; margin-top: 8px; background: var(--cp-surface); }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 24px 0 28px; border-top: 1px solid var(--cp-border); border-bottom: 1px solid var(--cp-border); }
+    .metric { padding: 18px 20px 18px 0; }
+    .metric + .metric { padding-left: 24px; border-left: 1px solid var(--cp-border); }
+    .metric strong { display: block; font-size: 28px; line-height: 1.3; font-weight: 600; }
+    .metric span { color: var(--cp-text-muted); font-size: 12px; }
+    .section { margin-top: 28px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .section-head p { color: var(--cp-text-muted); font-size: 12px; margin: 0; }
+    .diagram { border: 1px solid var(--cp-border); background: var(--cp-surface); border-radius: 6px; padding: 26px 18px; min-height: 210px; overflow-x: auto; display: flex; justify-content: center; align-items: center; }
+    .mermaid { width: 100%; text-align: center; }
+    .mermaid svg { width: 100%; max-height: 470px; }
+    .caption { color: var(--cp-text-soft); font-size: 11px; margin-top: 9px; }
+    .concept-figure { margin: 26px 0 0; border-top: 1px solid var(--cp-border); padding-top: 20px; }
+    .concept-figure h2 { font-size: 16px; }
+    .concept-figure figcaption { color: var(--cp-text-muted); font-size: 12px; margin-top: 10px; }
+    .acceptance-table { min-width: 1080px; table-layout: fixed; }
+    .acceptance-table col:nth-child(1) { width: 18%; }
+    .acceptance-table col:nth-child(2) { width: 21%; }
+    .acceptance-table col:nth-child(3) { width: 31%; }
+    .acceptance-table col:nth-child(4) { width: 30%; }
+    .acceptance-table tbody th { background: var(--cp-surface); color: var(--cp-text); font-size: 13px; font-weight: 600; }
+    .acceptance-table p { margin: 8px 0 0; }
+    .acceptance-table ol { margin: 0; padding-left: 16px; }
+    .acceptance-table li { margin-bottom: 8px; padding-left: 2px; }
+    .acceptance-table li:last-child { margin-bottom: 0; }
+    @media (max-width: 700px) { .reference-grid { grid-template-columns: 1fr; } }
+    .concept-figure .source-image { display: block; margin-top: 14px; }
+    .reference-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    .reference-figure { margin: 0; min-width: 0; }
+    .source-image { width: 100%; padding: 0; border: 1px solid var(--cp-border); border-radius: 6px; background: var(--cp-surface); display: block; position: relative; overflow: hidden; }
+    .source-image img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; }
+    .source-image > svg { position: absolute; right: 9px; bottom: 9px; padding: 6px; width: 31px; height: 31px; border-radius: 5px; background: var(--cp-surface); color: var(--cp-text); border: 1px solid var(--cp-border); }
+    .reference-figure figcaption { margin-top: 10px; }
+    .reference-figure figcaption strong { display: block; font-size: 13px; }
+    .reference-figure figcaption span { display: block; font-size: 12px; color: var(--cp-text-muted); margin-top: 4px; }
+    dialog { border: 1px solid var(--cp-border); border-radius: 8px; padding: 0; background: var(--cp-surface); color: var(--cp-text); width: min(1540px, 96vw); max-height: 96vh; box-shadow: var(--cp-shadow); }
+    dialog::backdrop { background: var(--cp-overlay); }
+    .dialog-heading { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--cp-border); }
+    .dialog-heading h2 { margin: 0; font-size: 15px; }
+    #slide-image { display: block; width: 100%; height: auto; max-height: 80vh; object-fit: contain; }
+    .dialog-caption { padding: 12px 18px; color: var(--cp-text-muted); font-size: 12px; margin: 0; }
+    .two-col { display: grid; grid-template-columns: 1.15fr 1fr; gap: 28px; }
+    .resource-list { width: 100%; border-collapse: collapse; background: var(--cp-surface); }
+    .resource-list th { text-align: left; color: var(--cp-text-muted); font-weight: 500; font-size: 11px; background: var(--cp-surface-soft); }
+    .resource-list td, .resource-list th { padding: 13px 15px; border-bottom: 1px solid var(--cp-border); vertical-align: top; }
+    .resource-list td { font-size: 12px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--cp-border); border-radius: 5px; }
+    .note { border-left: 3px solid var(--cp-accent); background: var(--cp-accent-soft); padding: 14px 18px; margin-top: 20px; font-size: 13px; }
+    .note p:last-child { margin-bottom: 0; }
+    .step-list { counter-reset: steps; padding: 0; margin: 0; list-style: none; }
+    .step-list li { position: relative; padding: 0 0 22px 36px; border-left: 1px solid var(--cp-border); margin-left: 12px; }
+    .step-list li::before { counter-increment: steps; content: counter(steps); position: absolute; left: -12px; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--cp-surface); border: 1px solid var(--cp-border); text-align: center; color: var(--cp-accent); font-size: 11px; line-height: 22px; }
+    .step-list li:last-child { border-left-color: transparent; padding-bottom: 0; }
+    .step-list p { font-size: 12px; color: var(--cp-text-muted); }
+    .bottom-bar { border-top: 1px solid var(--cp-border); margin-top: 36px; padding-top: 15px; display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--cp-text-soft); font-size: 11px; }
+    .page-controls { display: flex; align-items: center; gap: 12px; }
+    .mobile-nav { display: none; }
+    .presentation .sidebar { display: none; }
+    .presentation .shell { grid-template-columns: minmax(0, 1fr); }
+    .presentation .workspace { max-width: 1400px; padding-top: 26px; }
+    .pane { animation: enter 180ms ease-out; }
+    @keyframes enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .pane { animation: none; } }
+    @media (max-width: 1050px) { .shell { grid-template-columns: 215px minmax(0, 1fr); } .workspace { padding: 22px 24px; } .two-col { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .topbar { padding: 0 12px; gap: 10px; height: 56px; } .brand { font-size: 15px; } .top-context, .top-divider { display: none; } .shell { display: block; min-height: calc(100vh - 56px); } .sidebar { display: none; position: fixed; left: 0; top: 56px; height: calc(100vh - 56px); width: 260px; z-index: 30; box-shadow: var(--cp-shadow); } .sidebar.open { display: flex; } .mobile-nav { display: inline-flex; } .workspace { padding: 20px 18px; } h1 { font-size: 27px; } .page-top { flex-wrap: wrap; margin-bottom: 20px; } .page-badge { margin: 0; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .metric { padding: 14px 10px !important; } .metric:nth-child(3) { border-left: 0; } .metric:nth-child(n+3) { border-top: 1px solid var(--cp-border); } .metric strong { font-size: 24px; } .breadcrumb { margin-bottom: 20px; font-size: 11px; flex-wrap: wrap; } .section-head { flex-wrap: wrap; } .diagram { padding: 15px 8px; min-height: 160px; } .mermaid svg { min-width: 540px; } .bottom-bar { align-items: flex-start; } }
+    @media (max-width: 700px) { #fullscreen-button { display: none; } .top-actions .icon-button { width: 32px; height: 32px; flex-basis: 32px; } .mermaid svg { min-width: 0; max-height: none; } .mermaid[data-diagram-type="sequence"] svg { min-width: 540px; } }
+    @media (max-width: 370px) { .brand span { max-width: 90px; white-space: normal; font-size: 13px; line-height: 1.15; } }
+    @media print { .topbar, .sidebar, .breadcrumb, .bottom-bar, .settings-panel { display: none !important; } .shell { display: block; } .workspace { padding: 0; max-width: none; } .pane[hidden] { display: block !important; } .pane { break-after: page; animation: none; } .diagram { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-button mobile-nav" id="menu-button" title="Open navigation" aria-label="Open navigation" aria-expanded="false"><i data-lucide="menu"></i></button>
+    <div class="brand"><i data-lucide="orbit"></i><span>Microsoft Foundry</span></div>
+    <div class="top-divider"></div><span class="top-context">Harbour Point / Solution walkthrough</span>
+    <div class="top-actions">
+      <button class="icon-button" id="settings-button" popovertarget="presentation-settings" title="Presentation settings" aria-label="Presentation settings"><i data-lucide="sliders-horizontal"></i></button>
+      <button class="icon-button" id="theme-button" title="Change theme" aria-label="Change theme"><i data-lucide="sun-moon"></i></button>
+      <button class="icon-button" id="present-button" title="Presentation mode" aria-label="Presentation mode" aria-pressed="false"><i data-lucide="presentation"></i></button>
+      <button class="icon-button" id="fullscreen-button" title="Full screen" aria-label="Full screen"><i data-lucide="maximize"></i></button>
+    </div>
+  </header>
+  <div class="settings-panel" id="presentation-settings" popover><h2>Presentation settings</h2><label><input id="show-customer-questions" type="checkbox">Show customer questions</label></div>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Solution navigation">
+      <div class="project"><div class="project-label">Project</div><strong>Harbour Point</strong><small>harbour-point-project</small></div>
+      <div class="nav-group">SOLUTION</div>
+      <nav id="navigation">
+        <button class="nav-item" data-page="overview" aria-current="page"><i data-lucide="layout-dashboard"></i>Overview<span class="nav-number">01</span></button>
+        <button class="nav-item" data-page="architecture"><i data-lucide="workflow"></i>Architecture<span class="nav-number">02</span></button>
+        <button class="nav-item" data-page="ingestion"><i data-lucide="scan-text"></i>Data preparation<span class="nav-number">03</span></button>
+        <button class="nav-item" data-page="knowledge"><i data-lucide="database"></i>Knowledge bases<span class="nav-number">04</span></button>
+        <button class="nav-item" data-page="runtime"><i data-lucide="bot"></i>Agent runtime<span class="nav-number">05</span></button>
+        <button class="nav-item" data-page="evidence"><i data-lucide="file-spreadsheet"></i>Demo evidence<span class="nav-number">06</span></button>
+        <button class="nav-item" data-page="readiness" hidden><i data-lucide="list-checks"></i>Customer questions<span class="nav-number">07</span></button>
+        <button class="nav-item" data-page="roadmap"><i data-lucide="route"></i>Next decisions<span class="nav-number">08</span></button>
+      </nav>
+      <div class="sidebar-footer">POC ENVIRONMENT<br>Sweden Central<br><br>28 October 2026<br>Fictional engineering test data</div>
+    </aside>
+    <main class="workspace" id="workspace">
+      <div class="breadcrumb"><span>Foundry IQ</span><i data-lucide="chevron-right"></i><span>Harbour Point</span><i data-lucide="chevron-right"></i><span id="breadcrumb-page">Overview</span></div>
+      <section class="pane" id="overview" aria-labelledby="overview-title">
+        <div class="page-top"><div><div class="eyebrow">Engineering document intelligence</div><h1 id="overview-title">Harbour Point<br>Foundry IQ solution</h1><p class="lead">From engineering PDFs to grounded answers and dynamically generated Excel, with the evidence kept alongside the result.</p></div><div class="page-badge"><span class="status verified">Live retrieval-to-Excel verified</span></div></div>
+        <div class="metrics"><div class="metric"><strong>3</strong><span>Source PDFs</span></div><div class="metric"><strong>40</strong><span>Default-pipeline chunks: 19 + 19 + 2</span></div><div class="metric"><strong>9</strong><span>Custom scanned-MEL chunks</span></div><div class="metric"><strong>3,072</strong><span>Embedding dimensions</span></div></div>
+        <div class="section-head"><h2>A knowledge layer, not a document attachment</h2><p>Current dynamic export path</p></div>
+        <div class="diagram"><div class="mermaid">flowchart LR
+          A["User question"] --> B["GPT-5.4 agent"]
+          B --> C["Foundry IQ knowledge base"]
+          C --> D["Retrieved answer + evidence"]
+          D --> E["Code Interpreter"]
+          E --> F["Downloadable Excel"]
+        </div></div>
+        <p class="caption">The Excel agent has no preloaded PDFs, equipment dataset or workbook. It looks up the knowledge base for the current request.</p>
+        <div class="two-col section"><div><h2>What we can show</h2><p>Separate native/scanned retrieval, Content Understanding ingestion, a page-aware custom index and live cross-document comparison exported to Excel.</p></div><div><h2>What we are still validating</h2><p>Exhaustive row coverage, exact per-value provenance, customer-template scoring and a production path that meets the no-MCP requirement.</p></div></div>
+      </section>
+      <section class="pane" id="architecture" hidden aria-labelledby="architecture-title"><div class="eyebrow">02 / Resource topology</div><h1 id="architecture-title">How the solution is connected</h1><p class="lead">Existing Foundry and Search services, isolated document sources and reusable knowledge-base connections.</p><div class="diagram section"><div class="mermaid">flowchart TB
+        subgraph C["Foundry project resource group"]
+          B["Blob Storage: native, scanned, study"]
+          M["GPT-5.4 + embedding-3-large"]
+          A["Foundry prompt agents"]
+        end
+        subgraph S["Existing Azure AI Search service"]
+          I["CU skillsets + vector indexes"]
+          K["Native / scanned / custom knowledge bases"]
+        end
+        B -->|"Managed-identity ingestion"| I
+        M -->|"Embeddings + KB reasoning"| S
+        I --> K
+        A <-->|"Project connection / MCP"| K
+        A --> E["Code Interpreter / Excel"]
+      </div></div><div class="table-wrap section"><table class="resource-list"><thead><tr><th>Resource</th><th>Implementation</th><th>Responsibility</th></tr></thead><tbody><tr><td>Foundry project</td><td><code>harbour-point-project</code></td><td>Prompt agents, models and project connections</td></tr><tr><td>Existing Search</td><td><code>search-harbour-point</code><br>Basic / 1 replica / 1 partition</td><td>Indexing, vector retrieval and knowledge bases</td></tr><tr><td>Blob Storage</td><td><code>stharbourpointdemo</code></td><td>Three PDFs in isolated source containers</td></tr><tr><td>Models</td><td>GPT-5.4 / text-embedding-3-large</td><td>Reasoning and 3,072-dimensional embeddings</td></tr></tbody></table></div><p class="caption">Resource names are illustrative. Storage and Foundry share the project resource group; the existing Search service stays in its original scope. Topology and measured chunk counts reflect the PoC.</p></section>
+      <section class="pane" id="ingestion" hidden aria-labelledby="ingestion-title"><div class="eyebrow">03 / Ingestion</div><h1 id="ingestion-title">Keep the table structure in the evidence</h1><p class="lead">Both MEL representations use Content Understanding. The custom pipeline adds retrievable page ranges and source locations.</p><div class="diagram section"><div class="mermaid">flowchart LR
+        P["Blob PDFs"] --> C["Content Understanding"]
+        C --> T["OCR + layout + tables"]
+        T --> H["Semantic chunks"]
+        H --> V["Embedding-3-large"]
+        V --> I["Search index"]
+        H --> L["File + page range + location"]
+        L --> I
+        I --> K["Knowledge source"]
+      </div></div><div class="two-col section"><div><h2>Default managed pipelines</h2><p>500-token semantic chunk target, no overlap and 3,072-dimensional vectors. All expected PDFs were found in their respective indexes.</p></div><div><h2>Owned custom pipeline</h2><p>1,000-token target for the scanned MEL, with <code>page_from</code>, <code>page_to</code>, <code>chunk_ordinal</code> and <code>source_location</code> projected into the index.</p></div></div>
+        <div class="table-wrap section"><table class="resource-list"><thead><tr><th>Document</th><th>Physical pages</th><th>Default CU pipeline</th><th>Custom CU pipeline</th></tr></thead><tbody><tr><td>Native MEL, Rev 0</td><td>3</td><td><strong>19 chunks</strong></td><td>Not configured</td></tr><tr><td>Scanned MEL, Rev 0</td><td>3</td><td><strong>19 chunks</strong></td><td><strong>9 chunks</strong></td></tr><tr><td>Study report extract, Rev 0</td><td>1</td><td><strong>2 chunks</strong></td><td>Same shared 2-chunk source</td></tr><tr><td><strong>Indexed totals</strong></td><td>7 across 3 PDFs</td><td><strong>40 chunks</strong> across the default sources</td><td><strong>11 chunks</strong> available to the custom KB: 9 MEL + 2 study</td></tr></tbody></table></div><p class="caption">Live index counts verified on 28 October 2026. Chunks are retrieval units, not equipment rows or an accuracy score. Native and scanned MEL are representations of the same document.</p>
+        <div class="note"><strong>Extraction is not lossless.</strong><p>A native-PDF extraction lost minus signs in some temperature cells. Preserve raw evidence, review signs and units, and never infer accuracy from successful indexing.</p></div></section>
+      <section class="pane" id="knowledge" hidden aria-labelledby="knowledge-title"><div class="eyebrow">04 / Knowledge layer</div><h1 id="knowledge-title">Isolate the representations.<br>Share the study context.</h1><p class="lead">The native and scanned MEL are the same revision, not two equipment inventories.</p><div class="diagram section"><div class="mermaid">flowchart LR
+        N["Native MEL source"] --> KN["harbour-point-native"]
+        S["Scanned MEL source"] --> KS["harbour-point-scanned"]
+        C["Custom scanned index source"] --> KC["harbour-point-scanned-custom"]
+        R["Shared study source"] --> KN
+        R --> KS
+        R --> KC
+        KN --> AN["Native agent"]
+        KS --> AS["Scanned agent"]
+        KC --> AE["Dynamic Excel agent"]
+      </div></div><div class="note"><strong>Fair comparison</strong><p>Same model, embeddings and instructions for the native/scanned pair. Only the MEL representation changes. The Excel agent uses the custom scanned knowledge base plus the shared study.</p></div></section>
+      <section class="pane" id="runtime" hidden aria-labelledby="runtime-title"><div class="eyebrow">05 / Dynamic agent</div><h1 id="runtime-title">Retrieve first. Generate the file second.</h1><p class="lead"><code>harbour-point-excel-agent</code> / active version 2 / GPT-5.4</p><div class="diagram section"><div class="mermaid">sequenceDiagram
+        participant U as User
+        participant A as GPT-5.4 agent
+        participant K as Foundry IQ
+        participant C as Code Interpreter
+        U->>A: Request an Excel comparison
+        A->>K: knowledge_base_retrieve
+        K-->>A: Answer, references and source data
+        A->>C: Structured results and evidence
+        C-->>A: Validated .xlsx file
+        A-->>U: Download link and limitations
+      </div></div><div class="two-col section"><div><h2>Agent responsibilities</h2><p>Understand the question, inspect evidence, keep conflicts separate, preserve units and qualifiers, and select suitable workbook columns.</p></div><div><h2>Workbook responsibilities</h2><p><strong>Results</strong> holds the answer. <strong>Evidence</strong> links fields to returned source data. <strong>Review</strong> records conflicts, missing metadata and unverified completeness.</p></div></div><div class="note">A fresh question triggers a live lookup. No equipment facts are attached to Code Interpreter ahead of time.</div></section>
+      <section class="pane" id="evidence" hidden aria-labelledby="evidence-title"><div class="eyebrow">06 / Observed demo result</div><h1 id="evidence-title">One question.<br>Two source values. No silent reconciliation.</h1><p class="lead">Compare compressor F00-KZ-0001 shaft power in the MEL and study report, then export the cited comparison.</p><div class="table-wrap section"><table class="resource-list"><thead><tr><th>Evidence</th><th>Reported power</th><th>Source</th><th>Page metadata</th></tr></thead><tbody><tr><td>MEL</td><td><strong>4,920 kW</strong></td><td>Scanned MEL, Rev 0</td><td>Returned chunk range: 2-3</td></tr><tr><td>Study narrative</td><td><strong>4,850 kW</strong></td><td>Study report extract, Rev 0</td><td>Not returned for this excerpt</td></tr><tr><td>Study key figures</td><td><strong>4,850 kW</strong></td><td>Study report extract, Rev 0</td><td>Page 1 in returned evidence</td></tr></tbody></table></div><div class="metrics"><div class="metric"><strong>3</strong><span>Result rows</span></div><div class="metric"><strong>5</strong><span>Evidence records</span></div><div class="metric"><strong>2</strong><span>Completed runtime tool calls</span></div><div class="metric"><strong>0</strong><span>Attached data files</span></div></div><p><span class="status verified">Cloud-generated workbook downloaded and validated</span></p><p class="caption">This is a demonstrated comparison query, not a score for complete equipment extraction. Blank pages were not filled by inference.</p></section>
+      <section class="pane" id="readiness" hidden data-user-hidden="true" aria-labelledby="readiness-title">
+        <div class="eyebrow">07 / Customer acceptance</div><h1 id="readiness-title">The path to complete<br>customer acceptance</h1>
+        <p class="lead">For each question: what works today, what must change, and the evidence required to close it. The actions below are proposed work, not capabilities already validated.</p>
+        <div class="note"><strong>Define 100% before measuring it.</strong><p>Agree the source revisions, required equipment rows and fields, handling of blanks/placeholders, workbook template and authoritative answers. Complete acceptance means every required benchmark check passes. An unresolved value stays a failed or open check, not an invented answer. This is not a guarantee of perfect performance on unseen documents.</p></div>
+        <div class="table-wrap section" id="acceptance-plan" tabindex="0" aria-label="Customer questions and acceptance plan">
+          <table class="resource-list acceptance-table"><colgroup><col><col><col><col></colgroup><thead><tr><th scope="col">Customer question</th><th scope="col">Current status and evidence</th><th scope="col">Solution to reach complete acceptance</th><th scope="col">Proof / exit criterion</th></tr></thead><tbody>
+            <tr data-question="1"><th scope="row">1. Build a KB and connect an agent</th><td><span class="status verified">Demonstrated</span><p>KBs and GPT-5.4 agents exist. The Excel agent completed live retrieval followed by file generation.</p></td><td class="implementation"><ol><li>Freeze a manifest of files, hashes, revisions and source membership; keep native/scanned MEL runs isolated.</li><li>Verify ingestion, filename coverage and vectors. Run agreed questions in fresh conversations, including cross-document and no-result cases.</li></ol></td><td class="proof"><ol><li>All three supplied PDFs appear in the intended indexes with no failed documents.</li><li>Runtime traces prove the correct KB was queried. Expected facts cite the right source; unsupported requests return insufficient evidence.</li></ol></td></tr>
+            <tr data-question="2"><th scope="row">2. Every equipment row and field</th><td><span class="status pending">Key gap</span><p>Ranked retrieval cannot prove completeness. Offline extraction found 35 rows / 630 fields, not independently validated ground truth.</p></td><td class="implementation"><ol><li>Materialize row/cell records from CU structured analysis or DI Layout, with stable package and subitem identities.</li><li>Add a live enumeration tool that reads all matching records, follows pagination and returns source/page coverage. Use IQ for grounding and this tool for full registers; do not preload a dataset into Code Interpreter.</li></ol></td><td class="proof"><ol><li>Against the customer-approved register: 100% required-row recall, no extra/duplicate rows and 100% required-field agreement.</li><li>Account for every page and subitem; missing records or incomplete pagination fail the gate.</li><li>Change a source row, reindex and confirm a fresh agent request reflects it without new data attachments.</li></ol></td></tr>
+            <tr data-question="3"><th scope="row">3. File and page for each value</th><td><span class="status partial">Partial</span><p>Document references and some chunk page ranges exist. A 2-3 page range is not exact per-cell provenance.</p></td><td class="implementation"><ol><li>Persist document/revision/hash, physical page, table/row/column, raw text and analyzer-returned polygon or span for every field.</li><li>Keep provenance IDs through normalization, retrieval and Excel. Add field-evidence links and comments; retain original values and units alongside conversions.</li></ol></td><td class="proof"><ol><li>Every required exported field resolves to the exact source revision and physical page.</li><li>Check locations against annotated merged/wrapped cells. Missing metadata stays flagged, never invented.</li><li>Required provenance coverage is 100%; unresolved links block acceptance.</li></ol></td></tr>
+            <tr data-question="4"><th scope="row">4. Difficult engineering-table cases</th><td><span class="status partial">Partial</span><p>Dynamic Excel preserves the compressor conflict. The full hard-case scorecard has not been run end to end.</p></td><td class="implementation"><ol><li>Reconstruct wrapped/merged rows; preserve blank raw subitem tags and explicit parent packages. Name hot/cold sides.</li><li>Preserve one-of-two train scope, duty/standby, common equipment, VTA/FV/HOLD/AMB, blanks, signs and unit exceptions. Route ambiguous OCR to review.</li></ol></td><td class="proof"><ol><li>Pass annotated tests for every edge case on native and scanned inputs, through retrieval and final Excel.</li><li>Verify package subitems, paired temperatures, standby power, minus signs and the receiver's mm note.</li><li>Keep 4,920 vs 4,850 kW as a conflict; do not misclassify operating vs design pressure as a conflict.</li></ol></td></tr>
+            <tr data-question="5"><th scope="row">5. Scanned PDFs and CU / DI</th><td><span class="status verified">CU demonstrated</span><p>CU OCR/layout ingestion and scanned retrieval work. DI is an alternative, not a deployed component.</p></td><td class="implementation"><ol><li>Retain CU page/table outputs and processing status for the agreed PDFs.</li><li>Where CU misses a required case, compare DI Layout or a custom CU analyzer on the same pages/schema. Review signs, punctuation, units and row boundaries; reprocess failures.</li></ol></td><td class="proof"><ol><li>All expected pages processed, with no unexplained omissions.</li><li>Score native/scanned runs separately against approved values; all critical benchmark cells are correct after documented review.</li><li>Retain analyzer versions, raw outputs, errors and rerun evidence.</li></ol></td></tr>
+            <tr data-question="6"><th scope="row">6. Customer Excel template and scoring</th><td><span class="status partial">Dynamic Excel works</span><p>Results, Evidence and Review sheets are generated live. The actual template and authoritative answers are not yet supplied.</p></td><td class="implementation"><ol><li>Agree template mapping, row IDs, units, required cells, tolerances and placeholder handling.</li><li>Populate the blank template from live tool results while preserving formatting, formulas and validations.</li><li>Use an independent deterministic scorer for row, field and provenance coverage; fix mismatches and rerun.</li></ol></td><td class="proof"><ol><li>Workbook opens in Excel, matches the approved template and has no missing required cells or formula/link errors.</li><li>Meet the agreed 100% benchmark targets using pre-agreed tolerances.</li><li>Repeat in a fresh conversation and after a source update; retain workbook, gold version, trace and score report.</li></ol></td></tr>
+            <tr data-question="7"><th scope="row">7. Cost and SharePoint without MCP</th><td><span class="status partial">Design and approval</span><p>Search is Basic / 1 replica / 1 partition. The current agent-to-IQ path uses MCP; SharePoint and the replacement runtime are not implemented.</p></td><td class="implementation"><ol><li>Build a Sweden Central estimate from current rates and measured page/token/query/session usage, including idle Search, Blob and refresh costs.</li><li>Use an approved SharePoint indexer or Graph sync, validating preview acceptability, changes/deletions and ACL propagation.</li><li>Replace agent-to-KB MCP with an Entra-authenticated application/function tool calling KB REST retrieval.</li></ol></td><td class="proof"><ol><li>Itemized low/expected/high cost scenarios reconcile with trial billing; load tests meet agreed latency/capacity.</li><li>Add, update, delete and revoke SharePoint content; changes appear within the agreed refresh window.</li><li>Authorized/unauthorized user tests prevent data leakage; runtime/network logs show no MCP calls.</li></ol></td></tr>
+          </tbody></table>
+        </div>
+        <div class="diagram section"><div class="mermaid">flowchart LR
+          G["Approved template + gold values"] --> X["Live extraction and retrieval"]
+          X --> W["Excel + field provenance"]
+          W --> S["Independent scorer"]
+          S --> D{"All required checks pass?"}
+          D -->|"No"| R["Review, correct and rerun"]
+          R --> X
+          D -->|"Yes"| A["Customer acceptance"]
+        </div></div><p class="caption">Proposed acceptance workflow. Today's dynamic retrieval-to-Excel smoke test is one input to this process, not its final sign-off.</p>
+      </section>
+      <section class="pane" id="roadmap" hidden aria-labelledby="roadmap-title"><div class="eyebrow">08 / Next decisions</div><h1 id="roadmap-title">From a working demo<br>to a measurable engineering workflow</h1><div class="two-col section"><div><ol class="step-list"><li><h3>Define the acceptance contract</h3><p>Obtain the customer workbook template, authoritative values and row/field completeness rules.</p></li><li><h3>Prove exhaustive coverage</h3><p>Use an approved source-enumeration or structured extraction tool when every row is required. Do not equate repeated retrieval with guaranteed completeness.</p></li><li><h3>Validate the hard cases</h3><p>Wrapped rows, hot/cold pairs, package subitems, train scope, placeholders, signs and cross-document conflicts.</p></li><li><h3>Choose the approved production transport</h3><p>Direct knowledge-base REST retrieval can replace MCP. SharePoint ingestion and per-user authorization are a separate design decision.</p></li></ol></div><div><h2>Cost model</h2><p>Search baseline: <strong>Basic, 1 search unit</strong>, billed while provisioned. Exact regional rates are not quoted here.</p><div class="table-wrap"><table class="resource-list"><tbody><tr><td>Ingestion</td><td>CU page processing, embedding tokens, Blob storage and transactions</td></tr><tr><td>Retrieval</td><td>Search/agentic usage and GPT-5.4 planning or synthesis tokens</td></tr><tr><td>File generation</td><td>Agent tokens and Code Interpreter session usage</td></tr></tbody></table></div><div class="note"><strong>No-MCP boundary</strong><p>The demo uses MCP today. Replacing the SharePoint connector alone does not remove MCP from the agent-to-KB connection. Preserve ACLs when content moves.</p></div></div></div></section>
+      <div id="slide-assets" hidden>
+          <figure class="reference-figure" data-source="6"><button class="source-image" data-slide="6" aria-label="View source slide 6: Foundry IQ Knowledge Bases"><img src="assets/slide-06.jpg" width="1600" height="900" alt="Microsoft source slide 6: query planning, knowledge-source selection, result merging and iterative retrieval"><i data-lucide="expand"></i></button><figcaption><strong>06 / Foundry IQ Knowledge Bases</strong><span>Product concept: retrieval planning, source selection, merging and iteration. Our PoC uses Blob-backed sources, not every source pictured.</span></figcaption></figure>
+          <figure class="reference-figure" data-source="9"><button class="source-image" data-slide="9" aria-label="View source slide 9: Foundry IQ and Azure AI Search"><img src="assets/slide-09.jpg" width="1600" height="900" alt="Microsoft source slide 9: Foundry IQ is built on Azure AI Search and works with existing Search services"><i data-lucide="expand"></i></button><figcaption><strong>09 / Foundry IQ and Azure AI Search</strong><span>Why we reuse the existing Search service. Benchmark charts belong to the source deck; they are not Harbour Point measurements.</span></figcaption></figure>
+          <figure class="reference-figure" data-source="17"><button class="source-image" data-slide="17" aria-label="View source slide 17: Data Preparation"><img src="assets/slide-17.jpg" width="1600" height="900" alt="Microsoft source slide 17: indexed-source connectivity, OCR, layout extraction, chunking, representations and indexing"><i data-lucide="expand"></i></button><figcaption><strong>17 / Data Preparation</strong><span>Maps to the CU skillset, chunking, embeddings and owned custom index. ACL capabilities shown are product context, not validated PoC controls.</span></figcaption></figure>
+          <figure class="reference-figure" data-source="21"><button class="source-image" data-slide="21" aria-label="View source slide 21: Knowledge Base as MCP server"><img src="assets/slide-21.jpg" width="1600" height="900" alt="Microsoft source slide 21: an MCP client sends intents to a knowledge base, which queries sources and returns merged results"><i data-lucide="expand"></i></button><figcaption><strong>21 / Knowledge Base as MCP server</strong><span>Explains today's agent-to-IQ transport. The customer-approved no-MCP alternative remains a separate production decision.</span></figcaption></figure>
+      </div>
+      <footer class="bottom-bar"><span>Harbour Point CCS / Fictional test data / 28 Oct 2026</span><div class="page-controls"><button class="icon-button" id="previous-button" title="Previous section" aria-label="Previous section"><i data-lucide="arrow-left"></i></button><span id="page-counter">01 / 07</span><button class="icon-button" id="next-button" title="Next section" aria-label="Next section"><i data-lucide="arrow-right"></i></button></div></footer>
+    </main>
+  </div>
+  <dialog id="slide-dialog" aria-labelledby="slide-dialog-title"><div class="dialog-heading"><h2 id="slide-dialog-title">Foundry IQ</h2><button class="icon-button" id="close-slide" aria-label="Close image" title="Close image"><i data-lucide="x"></i></button></div><img id="slide-image" alt=""><p class="dialog-caption" id="slide-caption"></p></dialog>
+  <script id="mermaid-library" src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+  <script id="lucide-library" src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>
+    const allPages = Array.from(document.querySelectorAll('.pane'));
+    const allNavItems = Array.from(document.querySelectorAll('[data-page]'));
+    let pages = allPages.filter(page => page.id !== 'readiness');
+    let navItems = allNavItems.filter(item => item.dataset.page !== 'readiness');
+    const diagramSources = new Map(Array.from(document.querySelectorAll('.mermaid')).map(node => [node, node.textContent]));
+    const narrowViewport = window.matchMedia('(max-width: 700px)');
+    function resetDiagrams() {
+      diagramSources.forEach((source, node) => {
+        node.dataset.diagramType = source.trim().startsWith('sequenceDiagram') ? 'sequence' : 'flow';
+        node.removeAttribute('data-processed');
+        node.textContent = narrowViewport.matches ? source.replace(/^(\s*)flowchart LR/m, '$1flowchart TB') : source;
+      });
+    }
+    let activeIndex = 0;
+    const slideTitles = {'9': 'Foundry IQ and Azure AI Search', '17': 'Data preparation with Content Understanding', '6': 'Foundry IQ knowledge bases', '21': 'Knowledge base and agent integration'};
+    const slideCaptions = {
+      '9': 'Foundry IQ reuses Azure AI Search services and indexes. Charts shown are product illustrations, not Harbour Point measurements.',
+      '17': 'The PoC uses Content Understanding for layout and table extraction. Document-level authorization still needs separate validation.',
+      '6': 'Reusable knowledge bases select sources and merge results. This PoC uses Blob-backed sources; not every connector pictured is deployed.',
+      '21': 'The current agent queries its knowledge base over MCP. A no-MCP runtime remains a separate production decision.'
+    };
+    const sourceLinks = [['architecture', '9'], ['ingestion', '17'], ['knowledge', '6'], ['runtime', '21']];
+    sourceLinks.forEach(([pageId, slide]) => {
+      const source = document.querySelector(`[data-source="${slide}"]`);
+      const figure = document.createElement('figure');
+      figure.className = 'concept-figure';
+      const heading = document.createElement('h2');
+      heading.textContent = slideTitles[slide];
+      const button = source.querySelector('.source-image').cloneNode(true);
+      button.setAttribute('aria-label', `View ${slideTitles[slide]}`);
+      button.querySelector('img').alt = button.querySelector('img').alt.replace(/^Microsoft source slide \d+:\s*/, '');
+      const caption = document.createElement('figcaption');
+      caption.textContent = slideCaptions[slide];
+      figure.append(heading, button, caption);
+      document.getElementById(pageId).append(figure);
+    });
+    document.addEventListener('click', event => {
+      const trigger = event.target.closest('[data-slide]');
+      if (!trigger) return;
+      const source = document.querySelector(`[data-source="${trigger.dataset.slide}"]`);
+      const original = source.querySelector('img');
+      const image = document.getElementById('slide-image');
+      image.src = original.src;
+      image.alt = original.alt;
+      document.getElementById('slide-dialog-title').textContent = slideTitles[trigger.dataset.slide];
+      document.getElementById('slide-caption').textContent = slideCaptions[trigger.dataset.slide];
+      document.getElementById('slide-dialog').showModal();
+    });
+    document.getElementById('close-slide').addEventListener('click', () => document.getElementById('slide-dialog').close());
+    function initializeDiagrams() {
+      const style = getComputedStyle(document.documentElement);
+      const color = name => style.getPropertyValue(name).trim();
+      mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base', fontFamily: 'Segoe UI, sans-serif', themeVariables: { primaryColor: color('--cp-surface-soft'), primaryTextColor: color('--cp-text'), primaryBorderColor: color('--cp-border-strong'), lineColor: color('--cp-text-soft'), secondaryColor: color('--cp-accent-soft'), tertiaryColor: color('--cp-surface'), mainBkg: color('--cp-surface'), nodeBorder: color('--cp-border-strong'), clusterBkg: color('--cp-surface-soft'), clusterBorder: color('--cp-border'), titleColor: color('--cp-text'), edgeLabelBackground: color('--cp-surface'), actorBkg: color('--cp-surface'), actorTextColor: color('--cp-text'), actorBorder: color('--cp-border-strong'), signalColor: color('--cp-text'), signalTextColor: color('--cp-text'), noteBkgColor: color('--cp-surface-soft'), noteTextColor: color('--cp-text'), fontSize: '13px' }, flowchart: { htmlLabels: false, curve: 'basis', nodeSpacing: 28, rankSpacing: 38 }, sequence: { useMaxWidth: true, wrap: true, actorMargin: 35, messageMargin: 30 } });
+    }
+    async function showPage(index, updateHash = true) {
+      activeIndex = Math.max(0, Math.min(pages.length - 1, index));
+      allPages.forEach(page => { page.hidden = page !== pages[activeIndex]; });
+      allNavItems.forEach(item => { if (item.dataset.page === pages[activeIndex].id) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current'); });
+      navItems.forEach((item, position) => { item.querySelector('.nav-number').textContent = String(position + 1).padStart(2, '0'); });
+      document.getElementById('breadcrumb-page').textContent = navItems[activeIndex].childNodes[1].textContent.trim();
+      document.getElementById('page-counter').textContent = `${String(activeIndex + 1).padStart(2, '0')} / ${String(pages.length).padStart(2, '0')}`;
+      document.getElementById('previous-button').disabled = activeIndex === 0;
+      document.getElementById('next-button').disabled = activeIndex === pages.length - 1;
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('menu-button').setAttribute('aria-expanded', 'false');
+      if (updateHash) history.replaceState(null, '', `#${pages[activeIndex].id}`);
+      const diagrams = Array.from(pages[activeIndex].querySelectorAll('.mermaid:not([data-processed])'));
+      if (diagrams.length) await mermaid.run({ nodes: diagrams });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    allNavItems.forEach(item => item.addEventListener('click', () => { const index = pages.findIndex(page => page.id === item.dataset.page); if (index >= 0) showPage(index); }));
+    document.getElementById('show-customer-questions').addEventListener('change', event => {
+      const currentId = pages[activeIndex].id;
+      const visible = event.target.checked;
+      document.querySelector('[data-page="readiness"]').hidden = !visible;
+      document.getElementById('readiness').dataset.userHidden = String(!visible);
+      pages = allPages.filter(page => visible || page.id !== 'readiness');
+      navItems = allNavItems.filter(item => visible || item.dataset.page !== 'readiness');
+      const index = pages.findIndex(page => page.id === currentId);
+      showPage(index >= 0 ? index : Math.min(activeIndex, pages.length - 1));
+    });
+    document.getElementById('previous-button').addEventListener('click', () => showPage(activeIndex - 1));
+    document.getElementById('next-button').addEventListener('click', () => showPage(activeIndex + 1));
+    document.getElementById('menu-button').addEventListener('click', () => { const opened = document.getElementById('sidebar').classList.toggle('open'); document.getElementById('menu-button').setAttribute('aria-expanded', String(opened)); });
+    document.getElementById('present-button').addEventListener('click', () => { const active = document.body.classList.toggle('presentation'); document.getElementById('present-button').setAttribute('aria-pressed', String(active)); });
+    document.getElementById('fullscreen-button').addEventListener('click', async () => { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); });
+    document.getElementById('theme-button').addEventListener('click', async () => { document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; resetDiagrams(); initializeDiagrams(); await showPage(activeIndex, false); });
+    narrowViewport.addEventListener('change', async () => { resetDiagrams(); await showPage(activeIndex, false); });
+    document.addEventListener('keydown', event => { if (document.getElementById('slide-dialog').open || document.activeElement.closest('.table-wrap') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return; if (event.key === 'ArrowRight' || event.key === 'PageDown') { event.preventDefault(); showPage(activeIndex + 1); } if (event.key === 'ArrowLeft' || event.key === 'PageUp') { event.preventDefault(); showPage(activeIndex - 1); } });
+    window.addEventListener('hashchange', () => { const index = pages.findIndex(page => `#${page.id}` === location.hash); if (index >= 0) showPage(index, false); });
+    lucide.createIcons();
+    resetDiagrams();
+    initializeDiagrams();
+    showPage(Math.max(0, pages.findIndex(page => `#${page.id}` === location.hash)), false);
+  </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "source_title": "The IQ Series: Foundry IQ",
+  "source_file": "IQSeries-FoundryIQ-ForSharing.pptx",
+  "discovery": "WorkIQ slide analysis; private sharing links intentionally omitted",
+  "image_capture": "Read-only PowerPoint Online viewer, 28 October 2026",
+  "slides": [
+    {
+      "number": 6,
+      "title": "Foundry IQ Knowledge Bases"
+    },
+    {
+      "number": 9,
+      "title": "Foundry IQ and Azure AI Search"
+    },
+    {
+      "number": 17,
+      "title": "Data Preparation"
+    },
+    {
+      "number": 21,
+      "title": "Knowledge Base as MCP server"
+    }
+  ],
+  "output": "index.html",
+  "bytes": 5014539,
+  "external_runtime_assets": 0
+}
