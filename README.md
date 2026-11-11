@@ -24,7 +24,7 @@ Reference documentation and architecture guidance.
 
 | Document | Description |
 |---|---|
-| [`foundry-citadel/`](docs/foundry-citadel/) | Foundry-style AI Citadel architecture explorer with six animated traffic flows, two network layouts, four-layer activation guidance and source-linked explanations |
+| [`foundry-citadel/`](docs/foundry-citadel/) | Foundry-style AI Citadel explorer with six animated traffic flows, annotated publish/access contracts, two network layouts and four-layer activation guidance |
 | [`foundry-iq/`](docs/foundry-iq/) | Portal-style Foundry IQ walkthrough: PDF ingestion, knowledge bases, dynamic Excel generation, chunk counts and customer acceptance gates |
 | [`foundry-snowflake/`](docs/foundry-snowflake/) | Interactive Microsoft Foundry + Snowflake MCP walkthrough, including PAT, native OAuth, and Entra OBO flows; images and diagram renderer are embedded |
 | `ingress-digest/` | Azure ingress architecture options with mapping to Azure Learn and Well-Architected guidance |
@@ -46,6 +46,21 @@ illustrative, not measured latency. Serve `docs/` with any static HTTP server
 (for example, `python3 -m http.server 8000 --directory docs`) and open
 `/foundry-citadel/` to preview it locally. No presentation media, customer-specific
 details or live Azure connections are included.
+
+Its **Access contracts** workspace explains model-only, MCP, A2A and mixed-asset
+examples using the accelerator's Bicep parameter and APIM product-policy XML
+formats. Select a section to highlight its code and inspect its properties,
+deployment effects, credential delivery and runtime checks. Samples contain
+placeholders, not secrets, and require the referenced accelerator module and
+configured resources before deployment; they do not deploy anything from the browser.
+
+The companion **Publish contracts** workspace covers an existing MCP server,
+REST-to-MCP operation wrapping and an A2A agent. It explains path construction,
+backend credentials, source-key forwarding, optional API Center registration and
+the handoff to an access contract. Publishing creates no consumer subscription.
+The pinned A2A source has conflicting caller-key guidance: examples request
+gating explicitly, include the missing caller security fragment in the agent
+access policy, and flag preview behavior for environment-specific validation.
 
 ---
 

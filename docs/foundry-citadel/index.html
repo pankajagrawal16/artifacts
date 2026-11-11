@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Explore the AI Citadel architecture in a Foundry-style workspace. Follow animated model, MCP, agent-to-agent, failover, policy, and telemetry flows.">
+  <meta name="description" content="Explore AI Citadel in a Foundry-style workspace: animated traffic flows, annotated publish and access contracts, deployment guidance and governance trade-offs.">
   <meta name="theme-color" content="#742cbd">
   <title>AI Citadel | Foundry Architecture Lab</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23742cbd'/%3E%3Cpath d='M8 24V10h4V6h3v7h4V6h3v4h3v14z' fill='white'/%3E%3C/svg%3E">
@@ -68,6 +68,8 @@
       </div>
       <p class="nav-label">Understand &amp; build</p>
       <button data-view="blueprint"><svg class="icon"><use href="#i-grid"/></svg> Deployment blueprint</button>
+      <button data-view="publish"><svg class="icon"><use href="#i-catalog"/></svg> Publish contracts</button>
+      <button data-view="contracts"><svg class="icon"><use href="#i-file"/></svg> Access contracts</button>
       <button data-view="value"><svg class="icon"><use href="#i-bolt"/></svg> Why Citadel?</button>
       <button data-view="sources"><svg class="icon"><use href="#i-book"/></svg> Sources &amp; scope</button>
     </nav>
@@ -171,6 +173,85 @@
       </div>
       <div class="panel contracts-panel"><div class="panel-heading"><div><span class="eyebrow">Policy as code</span><h3>Three contracts, three different questions</h3></div></div><div class="contract-selector" role="group" aria-label="Explore contract types"><button data-contract="backend" aria-pressed="true">Backend · What can we route to?</button><button data-contract="publish" aria-pressed="false">Publish · What can teams discover?</button><button data-contract="access" aria-pressed="false">Access · Who can consume it?</button></div><div class="contract-explanation" id="contract-explanation"></div></div>
       <div class="panel network-panel"><div><span class="eyebrow">Two supported network patterns</span><h3>A governance hub is a role, not necessarily the network hub.</h3><p>A dedicated Citadel spoke is reached through the enterprise hub firewall. A hub-based Citadel gateway is reached directly from peered agent spokes. VNet peering is not transitive; other-spoke backend routing still needs explicit design.</p><p>Private endpoints and DNS secure supported service endpoints. They do not automatically make every external tool, SaaS agent or provider private.</p></div><button class="button" data-view="traffic">Compare layouts on the canvas <svg class="icon"><use href="#i-arrow"/></svg></button></div>
+    </section>
+
+    <section id="view-publish" class="view" aria-labelledby="publish-title" hidden>
+      <div class="section-heading"><div><h2 id="publish-title">Publish contract explorer</h2><p>Expose a reusable asset first. Grant consumers access separately.</p></div><span class="small-badge">Accelerator preview · Read-only examples</span></div>
+      <div class="access-scenarios publish-scenarios" id="publish-scenarios" role="group" aria-label="Choose a publish-contract scenario"></div>
+      <p class="access-description" id="publish-example-description"></p>
+      <ol class="access-mapping" aria-label="Publishing is separate from consumer entitlement">
+        <li><span>01 · Existing asset</span><strong>Tool server, REST API or agent</strong><p>Publication does not deploy your workload or grant it data access.</p></li>
+        <li><span>02 · Publish</span><strong id="publish-api-name"></strong><p>Gateway API, baseline policy, diagnostics and optional catalog entry.</p></li>
+        <li><span>03 · Grant access separately</span><strong>No consumer entitlement yet</strong><p>No product, subscription or consumer key is created by this publisher.</p></li>
+      </ol>
+      <div class="contract-warning" id="publish-warning" hidden><strong>Before using this pattern</strong><p id="publish-warning-text"></p></div>
+      <div class="access-workspace">
+        <div class="panel access-editor">
+          <div class="access-editor-toolbar"><div class="access-files"><strong>main.bicepparam</strong></div><button class="button subtle" id="publish-copy">Copy file</button></div>
+          <div class="access-section-control"><label for="publish-section">Explain a section</label><select id="publish-section" aria-controls="publish-code publish-field-detail"></select><span id="publish-language"></span></div>
+          <p class="access-inline-summary" id="publish-inline-summary"></p>
+          <pre class="access-code" id="publish-code" tabindex="0" role="region" aria-label="Annotated publish-contract example"></pre>
+          <div class="access-editor-footer"><span id="publish-copy-status" role="status" aria-live="polite">Sample only. No Azure resources are changed.</span><a id="publish-reference" href="https://github.com/Azure-Samples/ai-hub-gateway-solution-accelerator" target="_blank" rel="noopener noreferrer">Field reference</a></div>
+        </div>
+        <aside class="panel access-inspector" id="publish-field-detail" aria-labelledby="publish-field-title">
+          <span class="eyebrow">Property inspector</span><h3 id="publish-field-title"></h3><p id="publish-field-description"></p>
+          <div class="value-callout"><svg class="icon"><use href="#i-info"/></svg><div><strong>What this changes</strong><p id="publish-field-effect"></p></div></div>
+          <dl class="access-property-list" id="publish-property-list"></dl>
+        </aside>
+      </div>
+      <div class="access-results publish-results">
+        <article class="panel"><span class="eyebrow">Derived publication plan · Illustrative host</span><code id="publish-endpoint"></code><p id="publish-route-note"></p><div class="access-assets" id="publish-resources"></div><button class="text-button" id="publish-watch-flow" data-scenario="mcp">Watch the related runtime flow <svg class="icon"><use href="#i-arrow"/></svg></button></article>
+        <article class="panel"><span class="eyebrow">Next: the access-contract handoff</span><p>Access-module parameter excerpt, not a complete deployment file:</p><pre class="publish-handoff" id="publish-access-mapping"></pre><p id="publish-access-note"></p><button class="text-button" id="publish-open-access" data-open-access="mcp">Explore the matching access pattern</button></article>
+      </div>
+      <details class="panel access-extensions"><summary>Baseline behavior, prerequisites and optional overrides</summary><dl class="access-property-list">
+        <div><dt><code>Existing platform + workload</code><span>Prerequisites</span></dt><dd>Deploy the gateway, logger and shared fragments first. The tool/agent must already run and be reachable. For Key Vault-backed credentials, APIM's identity needs secret access. For Foundry, attach and authorize the selected managed identity.</dd></div>
+        <div><dt><code>security-handler / managed identity</code><span>Different authentication legs</span></dt><dd>MCP's baseline invokes caller-key and optional product-JWT checks. A2A's baseline authenticates APIM to the backend with managed identity, but omits the caller security-handler. Validate the A2A preview's native caller gate and consumer policies before use.</dd></div>
+        <div><dt><code>mcp-usage / a2a-usage</code><span>Request metrics, not reasoning traces</span></dt><dd>Published assets emit inbound Application Insights request metrics. Configured scheduled Logic Apps can aggregate these into Cosmos DB; this path does not require Event Hubs. A request count is not a semantic tool-action count.</dd></div>
+        <div><dt><code>policyXml</code><span>Optional whole-policy override</span></dt><dd>Custom XML replaces the selected baseline. Preserve required authentication, routing, usage and A2A card rewriting. For API-to-MCP, automatic source-key forwarding is skipped when custom XML is supplied.</dd></div>
+        <div><dt><code>MCP streaming</code><span>Do not buffer responses</span></dt><dd>Do not read context.Response.Body in MCP policies: buffering breaks streaming. Keep any custom request inspection inbound; response content inspection is not part of this publishing baseline.</dd></div>
+      </dl></details>
+      <div class="scenario-note"><svg class="icon"><use href="#i-info"/></svg><p>These are editable authoring examples of the pinned accelerator's Bicep format, not a deployment service. Replace every resource/endpoint placeholder and validate preview support, permissions and negative authentication tests before use. Model supply is handled by backend onboarding, not publishAssets.</p></div>
+      <div id="publish-announcement" class="sr-only" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="view-contracts" class="view" aria-labelledby="access-title" hidden>
+      <div class="section-heading"><div><h2 id="access-title">Access contract explorer</h2><p>Choose a scenario, inspect the real file formats, and explain each section.</p></div><span class="small-badge">Read-only examples · Replace placeholders</span></div>
+      <div class="access-scenarios" id="access-scenarios" role="group" aria-label="Choose an access-contract scenario"></div>
+      <p class="access-description" id="access-example-description"></p>
+      <div class="contract-warning" id="access-preview-note" hidden><strong>A2A caller protection requires validation</strong><p>The pinned A2A baseline omits security-handler and its docs conflict on native subscription-key support. These examples explicitly include the caller security fragment for the agent, but it still depends on working key/product resolution. Verify missing/invalid keys, wrong-product access and JWT rejection; do not treat a policy variable or publication alone as proof of protection.</p></div>
+      <ol class="access-mapping" aria-label="How an access contract becomes enforcement">
+        <li><span>01 · Author</span><strong>Two files, two responsibilities</strong><p>Bicep parameters select resources and APIs; XML defines product policy.</p></li>
+        <li><span>02 · Provision</span><strong id="access-product-id"></strong><p>One APIM product + one subscription. Mixed assets share its active key.</p></li>
+        <li><span>03 · Enforce</span><strong id="access-enforcement"></strong><p>Client calls the governed API endpoint, not the contract file.</p></li>
+      </ol>
+      <div class="access-workspace">
+        <div class="panel access-editor">
+          <div class="access-editor-toolbar"><div class="access-files" role="group" aria-label="Choose a contract file"><button data-access-file="parameters" aria-pressed="true">main.bicepparam</button><button data-access-file="policy" aria-pressed="false">ai-product-policy.xml</button></div><button class="button subtle" id="access-copy">Copy file</button></div>
+          <div class="access-section-control"><label for="access-section">Explain a section</label><select id="access-section" aria-controls="access-code access-field-detail"></select><span id="access-language"></span></div>
+          <p class="access-inline-summary" id="access-inline-summary"></p>
+          <pre class="access-code" id="access-code" tabindex="0" role="region" aria-label="Annotated contract example"></pre>
+          <div class="access-editor-footer"><span id="access-copy-status" role="status" aria-live="polite">Sample only. No Azure resources are changed.</span><a id="access-reference" href="https://github.com/Azure-Samples/ai-hub-gateway-solution-accelerator" target="_blank" rel="noopener noreferrer">Field reference</a></div>
+        </div>
+        <aside class="panel access-inspector" id="access-field-detail" aria-labelledby="access-field-title">
+          <span class="eyebrow">Property inspector</span><h3 id="access-field-title"></h3><p id="access-field-description"></p>
+          <div class="value-callout"><svg class="icon"><use href="#i-info"/></svg><div><strong>What this changes</strong><p id="access-field-effect"></p></div></div>
+          <dl class="access-property-list" id="access-property-list"></dl>
+        </aside>
+      </div>
+      <div class="access-results">
+        <article class="panel"><span class="eyebrow">Granted APIs, not backend URLs</span><div class="access-assets" id="access-assets"></div><p>These APIs must already exist. Tools and agents are published separately; publication is not permission.</p></article>
+        <article class="panel"><span class="eyebrow">Credential delivery</span><code id="access-key-secret"></code><p id="access-secret-summary"></p><p>A subscription has primary and secondary keys. The module delivers the selected active key; the browser never generates or displays it.</p></article>
+        <article class="panel access-client"><span class="eyebrow">What the client sends</span><pre>api-key: &lt;contract subscription key&gt;
+Authorization: Bearer &lt;gateway-audience JWT&gt;</pre><p>These examples opt into both controls; validate A2A preview enforcement. A calling managed identity obtains the JWT; APIM-to-backend identity remains separate.</p><button class="text-button" id="access-watch-flow" data-scenario="inference">Watch runtime enforcement <svg class="icon"><use href="#i-arrow"/></svg></button></article>
+      </div>
+      <details class="panel access-extensions"><summary>Other supported properties worth knowing</summary><dl class="access-property-list">
+        <div><dt><code>publishAllAssetEndpoints</code><span>Alternative endpoint plan</span></dt><dd>Auto-publish an endpoint secret for every mapped API. assetEndpoints can override individual secret names; the sample uses an explicit list instead.</dd></div>
+        <div><dt><code>useTargetFoundry / foundryConfig</code><span>Optional connection delivery</span></dt><dd>Creates a supported LLM connection, not MCP/A2A connections. ProjectManagedIdentity authentication still sends the contract key and needs an audience matching gateway JWT validation.</dd></div>
+        <div><dt><code>additionalApimGateways / globalGatewayUrl</code><span>Optional resilience</span></dt><dd>Mirror a contract and its keys to additional gateways and select a shared endpoint. This does not automatically create backend capacity or a global traffic manager.</dd></div>
+        <div><dt><code>usePrimaryKey / keyRotationEnabled</code><span>Optional key lifecycle</span></dt><dd>Select the active key and deliberately regenerate the non-active key. Follow the accelerator's staged rotation procedure rather than changing both keys together.</dd></div>
+      </dl></details>
+      <div class="scenario-note"><svg class="icon"><use href="#i-info"/></svg><p>Examples use the accelerator's Bicep + XML deployment format, not a standalone request-JSON schema. Use the referenced module, replace resource/API names, provision JWT support and validate the deployment before use. Limits are illustrative, not sizing recommendations. An access contract does not provision backends, grant tool-level business permissions or automatically inject agent-runtime policy bundles.</p></div>
+      <div id="access-announcement" class="sr-only" role="status" aria-live="polite"></div>
     </section>
 
     <section id="view-value" class="view" aria-labelledby="value-title" hidden>

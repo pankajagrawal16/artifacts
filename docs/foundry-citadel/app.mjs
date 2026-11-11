@@ -1,4 +1,6 @@
 import { scenarios, sources, networkModes, layers, contracts } from "./flows.mjs";
+import { accessExamples, getAccessExample } from "./access-contracts.mjs";
+import { publishExamples, getPublishExample } from "./publish-contracts.mjs";
 
 const svgNS = "http://www.w3.org/2000/svg";
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -6,6 +8,14 @@ const state = {
   view: "traffic", scenario: "inference", step: 0, network: "dedicated",
   playing: false, progress: 0, finished: false, speed: 1,
   motion: !reducedMotion.matches, motionOverride: false, selectedNode: null, layer: "1",
+  samples: {
+    access: { example: "inference", file: "parameters", section: "template" },
+    publish: { example: "mcp", file: "parameters", section: "template" },
+  },
+};
+const sampleDefinitions = {
+  access: { examples: accessExamples, getExample: getAccessExample },
+  publish: { examples: publishExamples, getExample: getPublishExample },
 };
 const kinds = {
   request: { label: "Request", color: "var(--request)" },
@@ -452,7 +462,7 @@ function seek(index) {
 }
 
 function setView(view) {
-  const allowed = ["traffic", "blueprint", "value", "sources"];
+  const allowed = ["traffic", "blueprint", "contracts", "publish", "value", "sources"];
   if (!allowed.includes(view)) throw new Error(`Unknown workspace view: ${view}`);
   if (state.view !== view) pause();
   state.view = view;
@@ -521,8 +531,148 @@ function renderContract(id) {
   for (const button of document.querySelectorAll("[data-contract]")) {
     button.setAttribute("aria-pressed", String(button.dataset.contract === id));
   }
-  $("#contract-explanation").innerHTML = `<div><h3>${escapeHTML(contract.title)}</h3><p>${escapeHTML(contract.description)}</p><p><strong>${escapeHTML(contract.distinction)}</strong></p><a class="layer-source" href="${sources[contract.source].url}" target="_blank" rel="noopener noreferrer">Contract guidance</a></div>
+  const sampleLink = id === "access" || id === "publish"
+    ? `<p><button class="text-button" data-view="${id === "access" ? "contracts" : "publish"}">Explore annotated ${id}-contract samples</button></p>` : "";
+  $("#contract-explanation").innerHTML = `<div><h3>${escapeHTML(contract.title)}</h3><p>${escapeHTML(contract.description)}</p><p><strong>${escapeHTML(contract.distinction)}</strong></p><a class="layer-source" href="${sources[contract.source].url}" target="_blank" rel="noopener noreferrer">Contract guidance</a>${sampleLink}</div>
     <div class="contract-flow" aria-label="${escapeHTML(contract.from)} to ${escapeHTML(contract.to)}"><span>${escapeHTML(contract.from)}</span>${icon("arrow")}<span>${escapeHTML(contract.to)}</span></div>`;
+}
+
+function currentSampleFile(family) {
+  const selection = state.samples[family];
+  const file = sampleDefinitions[family].getExample(selection.example).files.find(item => item.id === selection.file);
+  if (!file) throw new Error(`Unknown ${family} contract file: ${selection.file}`);
+  return file;
+}
+
+function renderSampleScenarios(family) {
+  const selection = state.samples[family];
+  const container = $(`#${family}-scenarios`);
+  if (!container.childElementCount) {
+    container.innerHTML = Object.entries(sampleDefinitions[family].examples).map(([id, item]) =>
+      `<button data-${family}-example="${id}" aria-pressed="false">${icon(item.icon)}<span>${escapeHTML(item.title)}<small>${item.code}</small></span></button>`
+    ).join("");
+  }
+  for (const button of container.querySelectorAll("button")) {
+    button.setAttribute("aria-pressed", String(button.dataset[`${family}Example`] === selection.example));
+  }
+}
+
+function renderAccessExample() {
+  const example = getAccessExample(state.samples.access.example);
+  const hasAgent = example.assets.some(asset => asset.kind === "agent");
+  renderSampleScenarios("access");
+  $("#access-example-description").textContent = example.description;
+  $("#access-product-id").textContent = example.productId;
+  $("#access-enforcement").textContent = hasAgent ? "Per-asset gates; validate A2A preview" : example.code === "LLM" ? "Model access + token budgets" : "Endpoint access + request budgets";
+  $("#access-preview-note").hidden = !hasAgent;
+  $("#access-assets").innerHTML = example.assets.map(asset =>
+    `<div><span>${escapeHTML(asset.label)}</span><code>${escapeHTML(asset.apiName)}</code></div>`
+  ).join("");
+  $("#access-key-secret").textContent = example.keySecretName;
+  $("#access-secret-summary").textContent = `Key Vault receives one active-key secret and ${example.assets.length} endpoint secret${example.assets.length === 1 ? "" : "s"} for this subscription. Endpoint secrets contain gateway URLs, not the API resource names shown alongside.`;
+  $("#access-watch-flow").dataset.scenario = example.flow;
+  renderSampleFile("access");
+}
+
+function renderPublishExample() {
+  const example = getPublishExample(state.samples.publish.example);
+  renderSampleScenarios("publish");
+  $("#publish-example-description").textContent = example.description;
+  $("#publish-api-name").textContent = example.name;
+  $("#publish-endpoint").textContent = example.endpoint;
+  $("#publish-route-note").textContent = example.code === "mcp-from-api"
+    ? "mcp/ prefix + path + APIM's /mcp suffix. Test a real tool invocation after configuring source-key forwarding."
+    : example.code === "a2a"
+      ? `Agent card: ${example.agentCard}. Confirm its transport URLs point back through the gateway.`
+      : "mcp/ prefix + path. Do not append another /mcp to a native/remote MCP gateway URL.";
+  $("#publish-resources").innerHTML = example.resources.map(([label, value]) =>
+    `<div><span>${escapeHTML(label)}</span><code>${escapeHTML(value)}</code></div>`
+  ).join("");
+  $("#publish-access-mapping").textContent = `param apiNameMapping = {\n  ${example.code === "a2a" ? "AGENT" : "TOOL"}: [ ${example.accessApis.map(name => `'${name}'`).join(", ")} ]\n}`;
+  $("#publish-access-note").textContent = example.code === "mcp-from-api"
+    ? "Grant both APIs in the same access-contract product. Configure their tool classification consistently; this excerpt alone is not a complete access contract."
+    : "Grant this API resource name, not the endpoint URL. Then configure the consumer subscription, roles and limits. A2A preview protection must be validated separately.";
+  $("#publish-open-access").dataset.openAccess = example.accessExample;
+  $("#publish-open-access").textContent = example.code === "mcp-from-api" ? "Open access pattern; adapt API names" : "Explore the matching access pattern";
+  $("#publish-watch-flow").dataset.scenario = example.flow;
+  $("#publish-warning").hidden = !example.warning;
+  $("#publish-warning-text").textContent = example.warning;
+  renderSampleFile("publish");
+}
+
+function renderSampleFile(family) {
+  const file = currentSampleFile(family);
+  const selection = state.samples[family];
+  selection.section = file.sections[0].id;
+  for (const button of document.querySelectorAll(`[data-${family}-file]`)) {
+    button.setAttribute("aria-pressed", String(button.dataset[`${family}File`] === selection.file));
+  }
+  $(`#${family}-section`).innerHTML = file.sections.map(section =>
+    `<option value="${section.id}">${escapeHTML(section.label)}</option>`
+  ).join("");
+  $(`#${family}-language`).textContent = file.language;
+  $(`#${family}-code`).setAttribute("aria-label", `${sampleDefinitions[family].examples[selection.example].title}: ${file.name}. Highlighted lines match the selected section.`);
+  let number = 0;
+  const lines = [];
+  for (const [index, section] of file.sections.entries()) {
+    if (index) lines.push(`<span class="access-code-line"><span aria-hidden="true">${++number}</span><code></code></span>`);
+    for (const line of section.code.split("\n")) {
+      lines.push(`<span class="access-code-line" data-sample-section="${section.id}"><span aria-hidden="true">${++number}</span><code>${escapeHTML(line)}</code></span>`);
+    }
+  }
+  if (file.ending) {
+    lines.push(`<span class="access-code-line"><span aria-hidden="true">${++number}</span><code></code></span>`);
+    for (const line of file.ending.split("\n")) {
+      lines.push(`<span class="access-code-line"><span aria-hidden="true">${++number}</span><code>${escapeHTML(line)}</code></span>`);
+    }
+  }
+  $(`#${family}-code`).innerHTML = lines.join("");
+  $(`#${family}-code`).scrollTop = 0;
+  $(`#${family}-copy-status`).textContent = "Sample only. No Azure resources are changed.";
+  $(`#${family}-copy-status`).classList.remove("copy-error");
+  renderSampleSection(family);
+}
+
+function renderSampleSection(family) {
+  const file = currentSampleFile(family);
+  const selection = state.samples[family];
+  const section = file.sections.find(item => item.id === selection.section);
+  if (!section) throw new Error(`Unknown contract section: ${selection.section}`);
+  $(`#${family}-section`).value = section.id;
+  $(`#${family}-field-title`).textContent = section.title;
+  $(`#${family}-field-description`).textContent = section.description;
+  $(`#${family}-inline-summary`).textContent = `${section.title}. ${section.description}`;
+  $(`#${family}-field-effect`).textContent = section.effect;
+  $(`#${family}-property-list`).innerHTML = section.properties.map(([name, type, description]) =>
+    `<div><dt><code>${escapeHTML(name)}</code><span>${escapeHTML(type)}</span></dt><dd>${escapeHTML(description)}</dd></div>`
+  ).join("");
+  $(`#${family}-reference`).href = new URL(section.reference ?? file.reference, sources[family].url).href;
+  for (const line of $(`#${family}-code`).querySelectorAll("[data-sample-section]")) {
+    line.classList.toggle("selected", line.dataset.sampleSection === section.id);
+  }
+  const firstLine = $(`#${family}-code`).querySelector(".selected");
+  if (firstLine) $(`#${family}-code`).scrollTop = Math.max(0, firstLine.offsetTop - 24);
+  $(`#${family}-announcement`).textContent = `${sampleDefinitions[family].examples[selection.example].title}. ${file.name}. ${section.title}. ${section.effect}`;
+}
+
+async function copySampleFile(family) {
+  const { text, name } = currentSampleFile(family);
+  const title = sampleDefinitions[family].examples[state.samples[family].example].title;
+  const status = $(`#${family}-copy-status`);
+  if (!navigator.clipboard?.writeText) {
+    status.textContent = "Clipboard unavailable. Select the code and copy it manually.";
+    status.classList.add("copy-error");
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    status.textContent = `${name} copied (${title}). Replace placeholders before deploying.`;
+    status.classList.remove("copy-error");
+  } catch (error) {
+    console.error("Could not copy the contract sample.", error);
+    status.textContent = "Copy failed. Select the code and copy it manually.";
+    status.classList.add("copy-error");
+  }
 }
 
 function renderSources() {
@@ -533,6 +683,33 @@ function renderSources() {
 
 document.addEventListener("click", event => {
   if (!(event.target instanceof Element)) return;
+  const openAccess = event.target.closest("[data-open-access]");
+  if (openAccess) {
+    if (!Object.hasOwn(accessExamples, openAccess.dataset.openAccess)) throw new Error("Unknown access-contract scenario.");
+    state.samples.access.example = openAccess.dataset.openAccess;
+    renderAccessExample();
+    setView("contracts");
+    $(`[data-access-example="${state.samples.access.example}"]`).focus();
+    window.scrollTo(0, 0);
+    return;
+  }
+  for (const family of Object.keys(sampleDefinitions)) {
+    const example = event.target.closest(`[data-${family}-example]`);
+    if (example) {
+      const id = example.dataset[`${family}Example`];
+      if (!Object.hasOwn(sampleDefinitions[family].examples, id)) throw new Error(`Unknown ${family}-contract scenario.`);
+      state.samples[family].example = id;
+      if (family === "access") renderAccessExample();
+      else renderPublishExample();
+      return;
+    }
+    const file = event.target.closest(`[data-${family}-file]`);
+    if (file) {
+      state.samples[family].file = file.dataset[`${family}File`];
+      renderSampleFile(family);
+      return;
+    }
+  }
   const scenario = event.target.closest("[data-scenario]");
   if (scenario) { selectScenario(scenario.dataset.scenario); return; }
   const view = event.target.closest("[data-view]");
@@ -567,6 +744,13 @@ $("#next-button").addEventListener("click", () => seek(state.step + 1));
 $("#restart-button").addEventListener("click", () => seek(0));
 $("#step-range").addEventListener("input", event => seek(Number(event.target.value)));
 $("#return-to-flow").addEventListener("click", () => renderStep());
+for (const family of Object.keys(sampleDefinitions)) {
+  $(`#${family}-section`).addEventListener("change", event => {
+    state.samples[family].section = event.target.value;
+    renderSampleSection(family);
+  });
+  $(`#${family}-copy`).addEventListener("click", () => copySampleFile(family));
+}
 $("#network-mode").addEventListener("change", event => {
   const mode = event.target.value;
   if (!networkModes[mode]) throw new Error(`Unknown network layout: ${mode}`);
@@ -613,4 +797,6 @@ renderMap();
 renderScenario();
 renderLayer();
 renderContract("backend");
+renderAccessExample();
+renderPublishExample();
 renderSources();
