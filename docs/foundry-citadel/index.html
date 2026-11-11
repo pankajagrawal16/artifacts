@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore the AI Citadel architecture in a Foundry-style workspace. Follow animated model, MCP, agent-to-agent, failover, policy, and telemetry flows.">
+  <meta name="theme-color" content="#742cbd">
+  <title>AI Citadel | Foundry Architecture Lab</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23742cbd'/%3E%3Cpath d='M8 24V10h4V6h3v7h4V6h3v4h3v14z' fill='white'/%3E%3C/svg%3E">
+  <script>
+    (() => {
+      const requested = new URLSearchParams(location.search).get("scoutTheme");
+      document.documentElement.dataset.theme = ["light", "dark"].includes(requested)
+        ? requested : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <symbol id="i-foundry" viewBox="0 0 24 24"><path d="M4 20 9 4h6l5 16h-5l-3-10-3 10z" fill="currentColor" stroke="none"/><path d="m3 15 18-4v4L3 19z" fill="currentColor" stroke="none" opacity=".55"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-flow" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M6 9v9h9m-3-3 3 3-3 3M9 6h9v6m-3-3 3 3 3-3"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-agent" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="4"/><path d="M12 3v4M2 12v4m20-4v4m-14-1h.01M16 13h.01M9 17h6"/><circle cx="12" cy="3" r="1"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3"/></symbol>
+    <symbol id="i-model" viewBox="0 0 24 24"><path d="m12 2 9 5v10l-9 5-9-5V7zM3 7l9 5 9-5m-9 5v10M7.5 4.5l9 5"/></symbol>
+    <symbol id="i-tool" viewBox="0 0 24 24"><path d="m8 4-5 8 5 8m8-16 5 8-5 8M14 3l-4 18"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></symbol>
+    <symbol id="i-catalog" viewBox="0 0 24 24"><path d="M4 3h7v8H4zm9 0h7v8h-7zM4 13h7v8H4zm9 0h7v8h-7z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5zM14 3v5h5M8 12h8m-8 4h6"/></symbol>
+    <symbol id="i-firewall" viewBox="0 0 24 24"><path d="M3 4h18v16H3zM3 9h18M3 15h18M9 4v5m6 0v6m-6 0v5"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 3v18h17M8 16v-5m5 5V6m5 10v-8"/></symbol>
+    <symbol id="i-events" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="19" r="2"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M3 4h7l2 2 2-2h7v16h-7l-2 2-2-2H3zM12 6v16"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 3h7v7m0-7L10 14M10 3H3v18h18v-7"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 4v16m8-16v16" stroke-width="4"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="m5 5 10 7L5 19zM19 5v14"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m19 5-10 7 10 7zM5 5v14"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2 7M3 4v7h7"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-11v1"/></symbol>
+  </defs>
+</svg>
+<header class="topbar">
+  <a class="brand" href="../"><svg class="icon foundry-mark"><use href="#i-foundry"/></svg><span>Microsoft Foundry<span class="brand-caption">Architecture lab</span></span></a>
+  <div class="topbar-context"><span class="divider">/</span> Citadel reference environment <span class="demo-badge">Visual guide</span></div>
+  <div class="header-actions">
+    <a class="back-link" href="../">All artifacts <svg class="icon"><use href="#i-external"/></svg></a>
+    <button class="icon-button" id="theme-button" aria-label="Change colour theme" title="Change colour theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+  </div>
+</header>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Architecture navigation">
+    <div class="project"><span class="project-icon"><svg class="icon"><use href="#i-grid"/></svg></span><div><strong>citadel-reference</strong><small>Explore the architecture</small></div></div>
+    <nav class="main-nav" aria-label="Workspace">
+      <button data-view="traffic" aria-current="page"><svg class="icon"><use href="#i-flow"/></svg> Traffic explorer</button>
+      <div class="flow-navigation">
+        <p class="nav-label">Guided flows</p>
+        <div id="scenario-nav"></div>
+      </div>
+      <p class="nav-label">Understand &amp; build</p>
+      <button data-view="blueprint"><svg class="icon"><use href="#i-grid"/></svg> Deployment blueprint</button>
+      <button data-view="value"><svg class="icon"><use href="#i-bolt"/></svg> Why Citadel?</button>
+      <button data-view="sources"><svg class="icon"><use href="#i-book"/></svg> Sources &amp; scope</button>
+    </nav>
+    <div class="sidebar-footer"><span class="status-dot"></span> Illustrative environment<small>No Azure connection or live data</small></div>
+  </aside>
+  <main id="main" tabindex="-1">
+    <div class="page-heading">
+      <div><p class="breadcrumb">Architecture lab <span>/</span> AI governance</p><h1>AI Citadel <span class="heading-badge">Blueprint explorer</span></h1><p class="page-description">One governed front door. Independent teams. Trust at every layer.</p></div>
+      <button class="button subtle" data-view="value">Why this approach <svg class="icon"><use href="#i-arrow"/></svg></button>
+    </div>
+    <div class="layer-strip" aria-label="Explore the four complementary Citadel layers">
+      <button data-layer="1" class="layer-card layer-1"><span class="layer-icon"><svg class="icon"><use href="#i-shield"/></svg></span><span><small>L1 · Govern every call</small><strong>Governance Hub</strong></span><span class="layer-location">Central</span></button>
+      <button data-layer="2" class="layer-card layer-2"><span class="layer-icon"><svg class="icon"><use href="#i-agent"/></svg></span><span><small>L2 · Build &amp; operate</small><strong>Agent Operations</strong></span><span class="layer-location">Per team</span></button>
+      <button data-layer="3" class="layer-card layer-3"><span class="layer-icon"><svg class="icon"><use href="#i-person"/></svg></span><span><small>L3 · Own every agent</small><strong>Agent Management</strong></span><span class="layer-location">Activate</span></button>
+      <button data-layer="4" class="layer-card layer-4"><span class="layer-icon"><svg class="icon"><use href="#i-shield"/></svg></span><span><small>L4 · Protect &amp; detect</small><strong>Security Foundation</strong></span><span class="layer-location">Cross-cutting</span></button>
+    </div>
+
+    <section id="view-traffic" class="view" aria-labelledby="traffic-title">
+      <div class="section-heading"><div><h2 id="traffic-title">Traffic explorer</h2><p>Follow one interaction, one explained step at a time.</p></div><span class="simulation-label"><span class="status-dot"></span> Teaching sequence · not measured latency</span></div>
+      <div class="workspace">
+        <div class="workspace-toolbar">
+          <div class="scenario-heading"><span class="scenario-symbol"><svg class="icon" id="scenario-icon"><use href="#i-flow"/></svg></span><div><h3 id="scenario-title">Governed inference</h3><span id="scenario-subtitle">A model request, end to end.</span></div></div>
+          <label class="select-label">Network layout<select id="network-mode"><option value="dedicated">Citadel in a dedicated spoke</option><option value="hub">Citadel in the connectivity hub</option></select></label>
+        </div>
+        <div class="playback">
+          <div class="playback-buttons"><button class="button primary" id="play-button"><svg class="icon"><use href="#i-play"/></svg><span>Play flow</span></button><button class="icon-button" id="previous-button" aria-label="Previous step" title="Previous step"><svg class="icon"><use href="#i-back"/></svg></button><button class="icon-button" id="next-button" aria-label="Next step" title="Next step"><svg class="icon"><use href="#i-next"/></svg></button><button class="icon-button" id="restart-button" aria-label="Restart flow" title="Restart flow"><svg class="icon"><use href="#i-restart"/></svg></button></div>
+          <div class="playback-progress"><label for="step-range" id="progress-label">Walkthrough progress</label><input id="step-range" type="range" min="0" max="8" value="0" step="1" aria-label="Walkthrough step"><span id="progress-text">1 / 9</span></div>
+          <div class="playback-options"><label class="speed-label"><span class="sr-only">Playback speed</span><select id="speed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select></label><button class="motion-button" id="motion-button" aria-pressed="true" title="Toggle moving packets">Motion on</button></div>
+        </div>
+        <div class="explorer-grid">
+          <div class="map-column">
+            <div class="inline-step"><span id="inline-step-counter">01</span><div><strong id="inline-step-title"></strong><p id="inline-step-value"></p></div></div>
+            <div class="map-tools"><span class="map-label">Architecture canvas</span><div class="map-options"><label class="checkbox-label"><input id="show-network" type="checkbox" checked> Network boundaries</label><label class="zoom-label"><span class="sr-only">Diagram zoom</span><select id="zoom"><option value="1">Fit</option><option value="1.25">125%</option><option value="1.5">150%</option></select></label></div></div>
+            <div class="diagram-scroll" tabindex="0" role="region" aria-label="Interactive architecture diagram. Select a component to inspect it. Scroll horizontally on small screens.">
+              <svg id="architecture" viewBox="0 0 1000 720" xmlns="http://www.w3.org/2000/svg" aria-labelledby="diagram-title diagram-description">
+                <title id="diagram-title">AI Citadel hub-and-spoke architecture</title>
+                <desc id="diagram-description">An application uses an agent in a business-unit spoke. The agent reaches a central API Management gateway through the enterprise hub firewall in the dedicated-spoke layout. The gateway governs access to models, tools, and downstream agents. API Center and contracts are control-plane concerns. Diagnostics and usage processing are asynchronous.</desc>
+                <defs>
+                  <marker id="arrow-base" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 10 5 0 10" fill="var(--edge)"/></marker>
+                  <marker id="arrow-active" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 10 5 0 10" fill="var(--flow-color)"/></marker>
+                </defs>
+                <g id="boundaries">
+                  <rect class="zone zone-operations" x="16" y="48" width="216" height="512" rx="12"/>
+                  <rect class="zone zone-governance" x="366" y="48" width="268" height="512" rx="12"/>
+                  <rect class="zone zone-backends" x="722" y="48" width="262" height="512" rx="12"/>
+                  <text class="zone-title" x="32" y="72">AGENT EXECUTION</text><text class="zone-subtitle" x="32" y="89">Business-unit spokes · L2</text>
+                  <text class="zone-title" x="382" y="72">GOVERNANCE HUB · L1</text><text class="zone-subtitle" id="governance-location" x="382" y="89">Dedicated governance spoke</text>
+                  <text class="zone-title" x="738" y="72">GOVERNED AI ASSETS</text><text class="zone-subtitle" x="738" y="89">Approved backends · placement varies</text>
+                  <rect class="connectivity-zone" x="246" y="238" width="104" height="148" rx="9"/>
+                  <text class="connectivity-title" x="298" y="257" text-anchor="middle">ENTERPRISE</text><text class="connectivity-title" x="298" y="271" text-anchor="middle">HUB</text>
+                </g>
+                <rect class="telemetry-zone" x="16" y="600" width="968" height="105" rx="10"/>
+                <text class="zone-title" x="32" y="620">ASYNCHRONOUS OBSERVABILITY &amp; FINOPS</text>
+                <text class="canvas-note" x="500" y="581" text-anchor="middle">Control-plane links configure the gateway; they are not extra runtime hops.</text>
+                <g id="edges"></g>
+                <g id="nodes"></g>
+                <g id="packet-layer" aria-hidden="true"></g>
+              </svg>
+            </div>
+            <div class="map-legend" aria-label="Flow legend"><span><i class="legend-line request"></i>Request</span><span><i class="legend-line response"></i>Response</span><span><i class="legend-line control"></i>Control plane</span><span><i class="legend-line telemetry"></i>Telemetry</span><span><i class="legend-block"></i>Blocked / error</span></div>
+            <div class="foundation"><svg class="icon"><use href="#i-shield"/></svg><div><strong>Identity, ownership &amp; protection span the estate</strong><span>L3 · Agent 365 + Entra Agent ID <span class="foundation-divider">|</span> L4 · Entra + Defender + Purview</span></div><button data-layer="3" aria-label="Explore agent management and cross-cutting protection"><svg class="icon"><use href="#i-arrow"/></svg></button></div>
+          </div>
+          <aside class="inspector" aria-label="Flow and component explanation">
+            <div class="inspector-tabs"><span id="inspector-label">Trace inspector</span><span class="small-badge" id="flow-outcome">End to end</span></div>
+            <div id="step-panel">
+              <div class="step-kicker"><span id="step-counter">Step 1</span><span class="type-badge" id="step-kind">Request</span></div>
+              <h3 id="step-title"></h3>
+              <p id="step-description"></p>
+              <div class="value-callout"><svg class="icon"><use href="#i-bolt"/></svg><div><strong>Why it matters</strong><p id="step-value"></p></div></div>
+              <dl class="request-details" id="step-details"></dl>
+              <a class="source-link" id="step-source" href="#">Read the source <svg class="icon"><use href="#i-external"/></svg></a>
+              <p class="journey-heading">Journey <span>Choose any step</span></p>
+              <ol class="journey" id="journey"></ol>
+            </div>
+            <div id="component-panel" hidden>
+              <button class="text-button" id="return-to-flow"><svg class="icon"><use href="#i-back"/></svg> Return to this flow</button>
+              <span class="component-layer" id="component-layer"></span><h3 id="component-title"></h3><p id="component-description"></p>
+              <ul class="component-facts" id="component-facts"></ul>
+              <div class="value-callout"><svg class="icon"><use href="#i-bolt"/></svg><div><strong>The value</strong><p id="component-value"></p></div></div>
+              <a class="source-link" id="component-source" href="#">Component guidance <svg class="icon"><use href="#i-external"/></svg></a>
+            </div>
+          </aside>
+        </div>
+      </div>
+      <div class="scenario-note"><svg class="icon"><use href="#i-info"/></svg><p id="scenario-note"></p></div>
+      <div class="takeaway"><span class="eyebrow">The architecture in one sentence</span><h3>Centralise the rules, not every team's runtime.</h3><p>Agents run in the environment that suits the team. Governed calls converge on API Management; ownership, observability and security extend across the estate.</p><button class="text-button" data-view="value">Explore the value and trade-offs <svg class="icon"><use href="#i-arrow"/></svg></button></div>
+    </section>
+
+    <section id="view-blueprint" class="view" aria-labelledby="blueprint-title" hidden>
+      <div class="section-heading"><div><h2 id="blueprint-title">Deployment blueprint</h2><p>Four reinforcing layers. Different owners. Not four sequential network hops.</p></div><span class="small-badge">Guidance, not a deployment tool</span></div>
+      <div class="blueprint-layout">
+        <div class="panel layer-explainer"><div class="panel-heading"><h3>What you provision or activate</h3></div><div class="layer-selector" id="layer-selector" role="group" aria-label="Choose a Citadel layer"></div><div id="layer-explanation"></div></div>
+        <div class="panel activation-panel"><div class="panel-heading"><h3>A practical activation sequence</h3></div><ol class="activation-list">
+          <li><span>01</span><div><h4>Agree the operating model</h4><p>Assign policy, platform, agent-product, IAM, FinOps and security owners. Define allowed assets, residency boundaries and an acceptance bar.</p></div></li>
+          <li><span>02</span><div><h4>Establish connectivity and the central hub</h4><p>Choose hub-based or dedicated-spoke placement. Configure routes, firewall, private DNS and private endpoints as required; deploy the gateway landing zone.</p></div></li>
+          <li><span>03</span><div><h4>Curate supply, then grant demand</h4><p>Onboard model capacity with backend contracts. Publish reusable MCP/A2A assets where needed (preview). Create access contracts per business unit, use case and environment.</p></div></li>
+          <li><span>04</span><div><h4>Connect an execution spoke</h4><p>Deploy or onboard a Foundry, Container Apps, AKS or other supported runtime. Point the relevant model and tool connections at APIM. Configure consumer and backend identities separately.</p></div></li>
+          <li><span>05</span><div><h4>Activate cross-cutting trust in parallel</h4><p>Register accountable agent identities and owners. Configure Agent 365, Defender, Purview and Entra controls for the chosen agent type; check licensing and feature support.</p></div></li>
+          <li><span>06</span><div><h4>Prove the controls before scaling</h4><p>Test denied access, quotas, safety, backend failure and trace correlation. Validate tool/data permissions, human approvals, sensitive-log handling and per-contract usage attribution.</p></div></li>
+        </ol></div>
+      </div>
+      <div class="panel contracts-panel"><div class="panel-heading"><div><span class="eyebrow">Policy as code</span><h3>Three contracts, three different questions</h3></div></div><div class="contract-selector" role="group" aria-label="Explore contract types"><button data-contract="backend" aria-pressed="true">Backend · What can we route to?</button><button data-contract="publish" aria-pressed="false">Publish · What can teams discover?</button><button data-contract="access" aria-pressed="false">Access · Who can consume it?</button></div><div class="contract-explanation" id="contract-explanation"></div></div>
+      <div class="panel network-panel"><div><span class="eyebrow">Two supported network patterns</span><h3>A governance hub is a role, not necessarily the network hub.</h3><p>A dedicated Citadel spoke is reached through the enterprise hub firewall. A hub-based Citadel gateway is reached directly from peered agent spokes. VNet peering is not transitive; other-spoke backend routing still needs explicit design.</p><p>Private endpoints and DNS secure supported service endpoints. They do not automatically make every external tool, SaaS agent or provider private.</p></div><button class="button" data-view="traffic">Compare layouts on the canvas <svg class="icon"><use href="#i-arrow"/></svg></button></div>
+    </section>
+
+    <section id="view-value" class="view" aria-labelledby="value-title" hidden>
+      <div class="value-hero"><span class="eyebrow">Local freedom. Global rules.</span><h2 id="value-title">Make the next agent easier to govern,<br>not harder to approve.</h2><p>Citadel separates platform responsibilities from product responsibilities. Teams keep their runtime choices, while the enterprise gets reusable access, capacity, identity and evidence controls.</p></div>
+      <div class="comparison panel"><div class="comparison-heading"><span>As the estate grows</span><strong>Direct, per-team integrations</strong><strong class="accent-text">A shared Citadel approach</strong></div>
+        <div><h3>Policy &amp; access</h3><p>Every application implements its own keys, permissions and guardrails.</p><p>Contract-scoped access and reusable gateway policies create a consistent enforcement point.</p></div>
+        <div><h3>Capacity &amp; resilience</h3><p>Teams compete for quota and build their own retry or fallback logic.</p><p>Per-consumer limits protect shared capacity; configured pools and circuit breakers handle approved failover.</p></div>
+        <div><h3>Ownership &amp; cost</h3><p>Unclear agent owners and fragmented usage make accountability difficult.</p><p>Agent identity and lifecycle ownership complement per-contract usage for showback and chargeback.</p></div>
+        <div><h3>Developer experience</h3><p>Each product team repeats infrastructure and integration decisions.</p><p>Repeatable execution spokes and discoverable approved assets reduce undifferentiated setup work.</p></div>
+        <div><h3>Evidence &amp; operations</h3><p>Request-level logs, agent reasoning traces and security signals live in silos.</p><p>Gateway diagnostics, instrumented agent traces and security tooling provide complementary operational views.</p></div>
+      </div>
+      <div class="value-grid">
+        <article class="panel value-card"><span class="value-number">01</span><h3>For the platform team</h3><p>Operate a shared gateway and approved capacity instead of maintaining a bespoke integration for every app.</p><strong>Useful evidence</strong><p>Contract coverage, backend errors, quota rejections and successful recovery tests.</p><button class="text-button" data-scenario="failover">Watch approved failover <svg class="icon"><use href="#i-arrow"/></svg></button></article>
+        <article class="panel value-card"><span class="value-number">02</span><h3>For builders &amp; business teams</h3><p>Build agents close to the use case, reuse approved tools and models, and retain responsibility for product quality.</p><strong>Useful evidence</strong><p>Time to onboard a use case, evaluation results, tool correctness and human-approval coverage.</p><button class="text-button" data-scenario="mcp">Follow a governed tool call <svg class="icon"><use href="#i-arrow"/></svg></button></article>
+        <article class="panel value-card"><span class="value-number">03</span><h3>For IAM, security &amp; FinOps</h3><p>Know who owns an agent, what it may access, which team consumed capacity and where signals need investigation.</p><strong>Useful evidence</strong><p>Owned identities, least-privilege checks, retained audit records and reconciled usage attribution.</p><button class="text-button" data-scenario="telemetry">Follow the usage trail <svg class="icon"><use href="#i-arrow"/></svg></button></article>
+      </div>
+      <div class="panel tradeoffs"><svg class="icon"><use href="#i-info"/></svg><div><h3>A gateway is not a guarantee of trust.</h3><p>The hub is shared infrastructure to size, secure and operate. Policies add processing and can add latency; fallback needs real capacity. Product teams still own agent evaluations, tool approval and data permissions. Prompt/body logging needs explicit data-governance decisions. SaaS routing, Agent 365 coverage and preview integrations vary by agent type and feature availability. Compliance requires evidence and organisational controls, not just deployment.</p></div></div>
+    </section>
+
+    <section id="view-sources" class="view" aria-labelledby="sources-title" hidden>
+      <div class="section-heading"><div><h2 id="sources-title">Sources &amp; scope</h2><p>Architecture-grounded, deliberately simplified, and honest about previews.</p></div><span class="small-badge">Reviewed 11 November 2026</span></div>
+      <div class="panel scope-panel"><h3>How to read this visualisation</h3><ul><li>The canvas is an educational logical architecture, not a complete resource topology or a deployable design. Packet speed is for teaching, not measured performance.</li><li>L1–L4 are complementary responsibility layers. Agent 365, Entra, Defender and Purview are not four serial proxies in the request path.</li><li>Registry discovery and contract deployment are control-plane concerns. The agent's runtime model/tool/A2A calls use gateway endpoints only when explicitly configured and supported.</li><li>The map expands the enterprise-firewall hop for agent ingress in dedicated-spoke mode. Backend subnet routing, DNS resolution, moderation-service calls and token issuance are summarised rather than fully drawn.</li><li>Gateway diagnostics are not a complete agent reasoning trace. Instrument the agent/runtime and tools for end-to-end spans. Prompt/response body capture is optional and must be governed.</li><li>No live Azure calls, credentials, tenant identifiers, presentation media or customer-specific resources are included.</li></ul></div>
+      <div class="source-grid" id="source-grid"></div>
+      <div class="panel scope-panel preview-panel"><h3>Preview and support boundaries worth checking</h3><p><strong>Publish contracts and Foundry-hosted A2A publishing:</strong> marked preview in the accelerator. Publishing an endpoint does not grant access; access contracts are separate.</p><p><strong>Foundry portal MCP gateway integration:</strong> Microsoft Learn currently limits automatic routing to eligible new MCP tools created after gateway connection, excluding managed OAuth and certain other tool types. Existing tools are not automatically rerouted. Gateway logs do not provide tool-level traces.</p><p><strong>Networking, authentication and service tiers:</strong> choose supported APIM capabilities and auth modes for the actual runtime and backend. Do not assume SaaS-internal traffic or all tool integrations can be intercepted.</p></div>
+      <div class="source-footnote"><p><strong>Presentation reference:</strong> the supplied AI Agents Citadel v2.0.0 L200 deck was consulted locally for the four-layer model, operating ownership, activation paths and gateway dimensions. This page uses original diagrams and explanatory text; the deck is not redistributed.</p><p><strong>Visual inspiration:</strong> <a href="https://jjennerhars.github.io/citadel-visualiser/" target="_blank" rel="noopener noreferrer">jjennerhars / Citadel Visualiser</a>. Interface styling is inspired by the Foundry workspace, not a replica of the live portal or an official Microsoft product.</p></div>
+    </section>
+    <footer><span>AI Citadel · Foundry architecture lab</span><span>Independent reference visualisation · No live infrastructure</span></footer>
+  </main>
+</div>
+<div class="sr-only" id="step-announcement" role="status" aria-live="polite"></div>
+<noscript><div class="noscript-notice">This interactive guide requires JavaScript. Read the <a href="https://github.com/Azure-Samples/foundry-citadel-platform">Citadel blueprint</a> and <a href="https://github.com/Azure-Samples/ai-hub-gateway-solution-accelerator">gateway accelerator</a> for the architecture guidance.</div></noscript>
+</body>
+</html>
