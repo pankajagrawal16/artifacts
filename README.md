@@ -58,6 +58,9 @@ The [access comparison](https://pankajagrawal16.github.io/artifacts/azure-ai-gat
 shows which Citadel mechanics scoped Entra RBAC replaces and which still require
 policy or backend configuration. [What's new](https://pankajagrawal16.github.io/artifacts/azure-ai-gateway/#new)
 includes an animated Agent Hooks preview trace and links to the product docs.
+The [MCP on-behalf-of walkthrough](docs/azure-ai-gateway/index.html#mcp-obo)
+animates the documented `expenses-tools` example, from client sign-in through
+token exchange to a read-only result authorized by the backend as the user.
 
 Its **Access contracts** workspace explains model-only, MCP, A2A and mixed-asset
 examples using the accelerator's Bicep parameter and APIM product-policy XML
