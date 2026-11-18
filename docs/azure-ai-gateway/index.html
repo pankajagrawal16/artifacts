@@ -169,6 +169,12 @@
     .comparison thead { background: var(--cp-surface-soft); }
     .comparison tbody th { width: 16%; }
     .detail-grid .panel > button { margin-top: 8px; }
+    .l1-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin-bottom: 12px; }
+    .l1-toolbar label { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; max-width: 100%; }
+    .l1-lane { list-style: none; display: grid; gap: 8px; margin: 12px 0; padding: 0; }
+    .l1-lane li { border: 1px solid var(--cp-border); background: var(--cp-bg-elevated); border-radius: .625rem; padding: 8px 12px; }
+    .l1-lane .index { color: var(--cp-accent); margin-right: 8px; }
+    .l1-next { display: inline-block; margin-top: 8px; }
     .source-list { list-style: none; margin: 0; padding: 0; }
     .source-list li { padding: 10px 0; border-top: 1px solid var(--cp-border); }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -190,6 +196,7 @@
         <p class="eyebrow">Guided flows</p>
         <div class="nav-group" id="flows"></div>
         <p class="eyebrow">Understand &amp; build</p>
+        <button class="nav-button" data-route="l1">Compare L1 governance</button>
         <button class="nav-button" data-route="access">Compare access contracts</button>
         <button class="nav-button" data-route="new">What's new</button>
         <button class="nav-button" data-route="blueprint">Deployment blueprint</button>
@@ -274,6 +281,28 @@
         <p class="note"><strong>Scope of this trace:</strong> <span id="caveat"></span></p>
         <p class="note" id="related-traces" hidden><a href="#access">Compare both access approaches</a> · <a href="#new">See what's new</a></p>
       </section>
+      <section id="l1" aria-labelledby="l1-title" hidden>
+        <div class="section-heading"><div><h2 id="l1-title">Citadel L1 governance with Azure AI Gateway</h2><p class="muted">Compare the Azure Samples accelerator with the dedicated gateway, control by control.</p></div><span class="badge">L1 · Governance Hub</span></div>
+        <p class="panel">Azure AI Gateway can take over supported model and MCP traffic without reproducing the accelerator's APIM products or policy fragments. It does <strong>not</strong> replace the whole Citadel blueprint. Keep the hub's governance responsibilities, the teams' agent runtimes, and cross-cutting identity and security controls. The comparison below is a design aid, not a feature-parity claim or a migration run.</p>
+        <div class="panel note">
+          <div class="l1-toolbar">
+            <label for="l1-concern"><span class="eyebrow">Governance concern</span><select id="l1-concern"></select></label>
+            <button type="button" id="l1-replay">Replay comparison</button>
+            <span class="badge">Control sequence · not measured latency</span>
+          </div>
+          <h3 id="l1-concern-title"></h3>
+          <div class="detail-grid">
+            <article class="panel"><span class="eyebrow accent">Citadel L1 · Accelerator</span><ol class="l1-lane" id="l1-before"></ol><p id="l1-before-detail"></p><a id="l1-before-source">Accelerator implementation</a></article>
+            <article class="panel"><span class="eyebrow accent">L1 · Azure AI Gateway</span><ol class="l1-lane" id="l1-after"></ol><p id="l1-after-detail"></p><a id="l1-after-source">Gateway documentation</a></article>
+          </div>
+          <p class="note"><strong>Keep or verify:</strong> <span id="l1-check"></span><br><a class="l1-next" id="l1-next"></a></p>
+          <p class="sr-only" id="l1-status" role="status"></p>
+        </div>
+        <div class="detail-grid note">
+          <article class="panel"><span class="eyebrow accent">Start with one workload</span><h3>Prove the new path before cutting over</h3><p>Inventory the APIM APIs, policy fragments, keys, private routes and telemetry consumers. Pilot one model alias and one MCP server, then test scoped grants and denials, counter behavior, safety, routing and attribution. Keep the APIM route available until the workload's required controls and downstream reporting pass.</p><a data-source="accelerator">Accelerator source</a> · <a data-source="migration">APIM migration inventory and plan</a></article>
+          <article class="panel"><span class="eyebrow accent">No automatic parity</span><h3>Keep a separate plan for APIM-specific controls</h3><p>Don't assume custom XML, mixed model/MCP/A2A contracts, API Center registration, custom usage contracts, or the existing network topology transfer automatically. Test the actual endpoints, scopes, policies and reports you need. Retain APIM or redesign controls where equivalence isn't verified.</p><a href="#access">Compare access contracts</a> · <a href="#new">Review recent gateway capabilities</a></article>
+        </div>
+      </section>
       <section id="access" aria-labelledby="access-title" hidden>
         <div class="section-heading"><div><h2 id="access-title">Access contracts: Citadel vs. Azure AI Gateway</h2><p class="muted">Same intent: give a support workload only its approved model and tools.</p></div><span class="badge">Two animated walkthroughs</span></div>
         <div class="detail-grid">
@@ -330,6 +359,7 @@
   <noscript><p class="note">Enable JavaScript to play the teaching traces, or read the <a href="https://azure.github.io/aigateway/">Azure AI Gateway labs</a>.</p></noscript>
   <script>
     const sourceBase = "https://github.com/Azure/aigateway/blob/18803de4737bfb046d67e61e7bc307f0f710e5fe/labs/";
+    const acceleratorBase = "https://github.com/Azure-Samples/ai-hub-gateway-solution-accelerator/blob/81599b31dfbaee20ebd3a6d2ba9b07dde3c31814/";
     const sources = {
       overview: ["00-how-ai-gateway-works", "How Azure AI Gateway works"],
       provision: ["01-provision-gateway", "Provision a gateway"],
@@ -359,7 +389,87 @@
       failoverDocs: ["https://ai.gateway.azure.com/docs/releases/2026-08-28", "Gateway release notes on failover"],
       hookReference: ["https://github.com/Azure/aigateway/blob/18803de4737bfb046d67e61e7bc307f0f710e5fe/skills/manage-ai-gateway/references/policies.md#agenthooks-mcp-toolserver-only", "Azure/aigateway Agent Hooks policy reference"],
       citadel: ["../foundry-citadel/", "Citadel access-contract walkthrough"],
+      accelerator: [`${acceleratorBase}README.md`, "Citadel L1 accelerator snapshot"],
+      acceleratorAccess: [`${acceleratorBase}bicep/infra/citadel-access-contracts/README.md`, "Accelerator access contracts"],
+      acceleratorPolicy: [`${acceleratorBase}bicep/infra/citadel-access-contracts/citadel-access-contracts-policy.md`, "Accelerator product policies"],
+      acceleratorBackend: [`${acceleratorBase}bicep/infra/llm-backend-onboarding/README.md`, "Accelerator backend onboarding"],
+      acceleratorPublish: [`${acceleratorBase}bicep/infra/citadel-publish-contracts/README.md`, "Accelerator publish contracts"],
+      acceleratorMonitor: [`${acceleratorBase}guides/platform-observability-guide.md`, "Accelerator logging and FinOps"],
+      acceleratorNetwork: [`${acceleratorBase}guides/network-approach.md`, "Accelerator network architecture"],
+      modelFailover: ["https://ai.gateway.azure.com/docs/models/failover", "Alias failover and retry rules"],
+      federationDocs: ["https://ai.gateway.azure.com/docs/toolservers/federate-tool-servers", "Federate MCP servers and tools"],
+      costDocs: ["https://ai.gateway.azure.com/docs/policies/cost-limit", "Cost limit and caller overrides"],
+      hookDocs: ["https://ai.gateway.azure.com/docs/policies/agent-hooks", "Agent Hooks policy"],
+      exportDocs: ["https://ai.gateway.azure.com/docs/observability/custom-destination", "Export gateway telemetry"],
+      vnetDocs: ["https://ai.gateway.azure.com/docs/networking/vnet", "Gateway virtual network integration"],
+      migration: ["https://github.com/Azure/aigateway/blob/18803de4737bfb046d67e61e7bc307f0f710e5fe/skills/migrate-apim/SKILL.md", "APIM migration inventory and plan"],
     };
+
+    const l1Concerns = [
+      {
+        title: "Caller access and entitlement",
+        before: ["Deploy product and API associations", "Issue subscription key; optionally require JWT", "Enforce access in product and API policy"],
+        after: ["Assign Entra role on alias or MCP server", "Caller presents an Entra bearer token", "Gateway checks the requested asset"],
+        beforeDetail: "The access contract creates products and subscriptions, publishes the key and URLs to Key Vault, and can layer JWT checks on top.",
+        afterDetail: "For supported model and MCP calls, native runtime RBAC removes the per-contract APIM product, subscription key and custom JWT validation from the keyless path.",
+        check: "Keep an auditable record of principal, assets and policies. Test denied access and inherited roles. An MCP server grant isn't a per-tool grant, and outbound authentication is still separate.",
+        sources: ["acceleratorAccess", "identityDocs"], more: ["access", "Compare access mechanics"],
+      },
+      {
+        title: "Model capacity, routing and failover",
+        before: ["Declare model backends in Bicep", "Generate APIM pools and routing fragments", "Apply priority, weight and circuit breakers"],
+        after: ["Publish a stable model alias", "Configure backend priorities and weights", "Apply separate failover and retry rules"],
+        beforeDetail: "The accelerator already supports weighted and priority routing and APIM circuit breakers. These are not new governance goals.",
+        afterDetail: "Alias-level configuration replaces equivalent APIM pool wiring for covered models. Configured rules can retry a backend, switch to another eligible deployment, or temporarily exclude a failing backend.",
+        check: "Confirm compatibility, region and capacity, failure conditions, retries and affinity for stateful APIs. Don't infer failover from weights or assume the old affinity and retry behavior transfers.",
+        sources: ["acceleratorBackend", "modelFailover"], more: ["routing", "Play the weighted routing trace"],
+      },
+      {
+        title: "Token limits and cost budgets",
+        before: ["Set APIM product policy", "Identify the contract by subscription", "Enforce model token or tool request limits"],
+        after: ["Set gateway or asset policies", "Choose caller identity or a supported counter", "Enforce usage or estimated-cost limits"],
+        beforeDetail: "The accelerator's sample uses the APIM subscription for model token limits and quotas; its mixed contract uses request counters for tools and agents.",
+        afterDetail: "Native token and request limits reduce XML wiring. Cost limits can deny model requests against estimated spend and set different allowances for matching callers or claims.",
+        check: "A per-principal budget isn't the old shared subscription quota. Verify scope, renewal window, counter identity and denial behavior; reconcile estimates against your billing data.",
+        sources: ["acceleratorPolicy", "costDocs"], more: ["budget", "Play the budget denial trace"],
+      },
+      {
+        title: "Content safety and custom decisions",
+        before: ["Choose safety rules for the product", "Apply opt-in APIM LLM safety policy", "Handle denials and optional alerts"],
+        after: ["Configure supported model safety policy", "Screen prompts and responses", "Optionally use MCP Agent Hooks"],
+        beforeDetail: "The accelerator documents an opt-in APIM content-safety policy and configurable alerting. It can also host custom product-policy logic.",
+        afterDetail: "Use the native model safety policy where supported. MCP Agent Hooks (preview) add a synchronous external allow/deny decision before or after a tool call; they aren't model screening or an arbitrary XML replacement.",
+        check: "Test thresholds, error handling and alerting. An MCP post-call denial can't undo tool side effects; use pre-call checks for decisions that must prevent execution.",
+        sources: ["acceleratorPolicy", "hookDocs"], more: ["hooks", "Play the Agent Hooks trace"],
+      },
+      {
+        title: "MCP federation, publishing and backend identity",
+        before: ["Publish MCP or A2A endpoints and baseline policies", "Optionally register assets in API Center", "Grant consumption separately"],
+        after: ["Compose a federated MCP endpoint", "Expose reviewed tools and grant server access", "Configure backend identity per source"],
+        beforeDetail: "The preview publish contract covers existing MCP servers, API-to-MCP and A2A, with optional API Center registration. Publication doesn't create client products or subscriptions.",
+        afterDetail: "Federation combines registered sources under namespaced tools. A configured source can use delegated on-behalf-of exchange so the backend authorizes the user, rather than a shared account.",
+        check: "Keep the approved catalog and entitlement process. Verify A2A, API Center and any existing MCP resilience controls separately. OBO needs delegated consent and managed-identity trust; app-only tokens can't stand in for the user.",
+        sources: ["acceleratorPublish", "federationDocs"], more: ["mcp-obo", "Play the MCP on-behalf-of trace"],
+      },
+      {
+        title: "Monitoring, export and chargeback",
+        before: ["Collect APIM diagnostics and custom metrics", "Send configured usage events through Event Hubs and Logic Apps", "Store and report via Cosmos DB and Power BI"],
+        after: ["Inspect gateway requests, tokens and cost", "Connect Application Insights or export via OTLP", "Attribute with selected caller claims"],
+        beforeDetail: "The accelerator has different paths for operational diagnostics and contract-attributed FinOps reporting. The usage pipeline is not a request hop.",
+        afterDetail: "Native request visibility and OpenTelemetry export can reduce custom collection for covered signals, including streamed usage and selected Entra claims.",
+        check: "The existing Cosmos DB schema, Power BI dashboards and chargeback rules don't transfer automatically. Check fields, retention, privacy, alerts, and any separate agent or tool instrumentation.",
+        sources: ["acceleratorMonitor", "exportDocs"], more: ["telemetry", "Play the usage and chargeback trace"],
+      },
+      {
+        title: "Network and operational boundaries",
+        before: ["Place APIM in the hub or a governance spoke", "Wire routing, private endpoints and DNS", "Operate the accelerator's supporting resources"],
+        after: ["Deploy the dedicated AI Gateway resource", "Configure supported ingress and egress separately", "Prove reachability and regional suitability"],
+        beforeDetail: "The accelerator defines hub-based and dedicated-spoke patterns and networks the gateway and supporting services.",
+        afterDetail: "Supported AI flows no longer need an APIM instance just for those routes. The dedicated gateway has its own networking options; it doesn't provision the existing enterprise topology.",
+        check: "Validate private ingress, backend networking, DNS, firewall policy, region and recovery. Keep existing APIM services or private routing dependencies that are outside the pilot.",
+        sources: ["acceleratorNetwork", "vnetDocs"], more: ["blueprint", "See the gateway deployment blueprint"],
+      },
+    ];
 
     const nodes = {
       entra: { x: 120, y: 73, title: "Microsoft Entra ID", label: "Issues the caller token", source: "identityDocs", detail: "A workload can acquire an app-only access token; a signed-in-user client requests a delegated access token. Both target the gateway.", boundary: "Only the delegated token carries the user identity needed for MCP on-behalf-of.", only: ["entra-access", "mcp-obo"] },
@@ -514,7 +624,7 @@
     const state = { route: "", index: 0, selected: null, playing: false, elapsed: 0, frame: 0, last: null, motion: !reducedMotion.matches, manualMotion: false };
     const svgNS = "http://www.w3.org/2000/svg";
     const flowNames = Object.keys(flows);
-    const detailPanels = ["access", "new", "blueprint", "sources"];
+    const detailPanels = ["l1", "access", "new", "blueprint", "sources"];
     const stepNumber = (index) => String(index + 1).padStart(2, "0");
     let activePath;
     let activePackets = [];
@@ -532,6 +642,33 @@
       const [path, title] = sources[key];
       anchor.href = path.startsWith("https://") || path.startsWith("../") ? path : `${sourceBase}${path}/README.md`;
       anchor.title = title;
+    }
+
+    function renderL1(index, animate = false) {
+      const concern = l1Concerns[index];
+      $("l1-concern-title").textContent = concern.title;
+      $("l1-check").textContent = concern.check;
+      for (const [lane, source] of [["before", concern.sources[0]], ["after", concern.sources[1]]]) {
+        const rows = concern[lane].map((label, position) => {
+          const item = document.createElement("li");
+          const number = document.createElement("span");
+          number.className = "index";
+          number.setAttribute("aria-hidden", "true");
+          number.textContent = stepNumber(position);
+          item.append(number, label);
+          return item;
+        });
+        $(`l1-${lane}`).replaceChildren(...rows);
+        $(`l1-${lane}-detail`).textContent = concern[`${lane}Detail`];
+        setSource($(`l1-${lane}-source`), source);
+        if (animate && !reducedMotion.matches) rows.forEach((row, position) => row.animate(
+          [{ opacity: .4, transform: "translateY(4px)" }, { opacity: 1, transform: "translateY(0)" }],
+          { duration: 300, delay: position * 150, fill: "backwards" },
+        ));
+      }
+      $("l1-next").href = `#${concern.more[0]}`;
+      $("l1-next").textContent = concern.more[1];
+      if (animate) $("l1-status").textContent = `Comparing ${concern.title}`;
     }
 
     function pathBetween(from, to) {
@@ -658,6 +795,7 @@
         else button.removeAttribute("aria-current");
       }
       if (!$("traffic").hidden) renderFlow();
+      if (route === "l1") renderL1(Number($("l1-concern").value), true);
     }
 
     function updateControls() {
@@ -746,6 +884,10 @@
       $("source-list").append(li);
     }
     for (const link of document.querySelectorAll("[data-source]")) setSource(link, link.dataset.source);
+    for (const [index, concern] of l1Concerns.entries()) $("l1-concern").add(new Option(concern.title, index));
+    for (const [id, event] of [["l1-concern", "change"], ["l1-replay", "click"]]) {
+      $(id).addEventListener(event, () => renderL1(Number($("l1-concern").value), true));
+    }
     for (const button of document.querySelectorAll("[data-route]")) button.addEventListener("click", () => {
       if (state.route !== button.dataset.route) history.pushState(null, "", `#${button.dataset.route}`);
       readRoute();

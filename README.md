@@ -61,6 +61,9 @@ includes an animated Agent Hooks preview trace and links to the product docs.
 The [MCP on-behalf-of walkthrough](docs/azure-ai-gateway/index.html#mcp-obo)
 animates the documented `expenses-tools` example, from client sign-in through
 token exchange to a read-only result authorized by the backend as the user.
+The [Citadel L1 comparison](docs/azure-ai-gateway/index.html#l1) maps the
+solution accelerator's gateway responsibilities to Azure AI Gateway, including
+what can move to native controls and what needs separate migration validation.
 
 Its **Access contracts** workspace explains model-only, MCP, A2A and mixed-asset
 examples using the accelerator's Bicep parameter and APIM product-policy XML
