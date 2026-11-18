@@ -163,6 +163,12 @@
     .panel h3 { margin: 4px 0 6px; }
     .panel p { margin: 4px 0 8px; }
     .panel .nav-button { display: inline-block; width: auto; }
+    .comparison { overflow-x: auto; }
+    .comparison table { width: 100%; min-width: 600px; border-collapse: collapse; }
+    .comparison th, .comparison td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--cp-border); }
+    .comparison thead { background: var(--cp-surface-soft); }
+    .comparison tbody th { width: 16%; }
+    .detail-grid .panel > button { margin-top: 8px; }
     .source-list { list-style: none; margin: 0; padding: 0; }
     .source-list li { padding: 10px 0; border-top: 1px solid var(--cp-border); }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -184,6 +190,8 @@
         <p class="eyebrow">Guided flows</p>
         <div class="nav-group" id="flows"></div>
         <p class="eyebrow">Understand &amp; build</p>
+        <button class="nav-button" data-route="access">Compare access contracts</button>
+        <button class="nav-button" data-route="new">What's new</button>
         <button class="nav-button" data-route="blueprint">Deployment blueprint</button>
         <button class="nav-button" data-route="sources">Sources &amp; scope</button>
       </nav>
@@ -264,6 +272,40 @@
           </div>
         </div>
         <p class="note"><strong>Scope of this trace:</strong> <span id="caveat"></span></p>
+        <p class="note" id="related-traces" hidden><a href="#access">Compare both access approaches</a> · <a href="#new">See what's new</a></p>
+      </section>
+      <section id="access" aria-labelledby="access-title" hidden>
+        <div class="section-heading"><div><h2 id="access-title">Access contracts: Citadel vs. Azure AI Gateway</h2><p class="muted">Same intent: give a support workload only its approved model and tools.</p></div><span class="badge">Two animated walkthroughs</span></div>
+        <div class="detail-grid">
+          <article class="panel"><span class="eyebrow accent">Citadel / API Management</span><h3>One contract bundles access and policy</h3><p>The accelerator creates an APIM product, API associations, and subscription for the use case. In the illustrated JWT-enabled contract, the caller uses both an APIM subscription key and an Entra token.</p><button type="button" data-route="citadel-access">Play the Citadel contract</button></article>
+          <article class="panel"><span class="eyebrow accent">Azure AI Gateway / Entra ID</span><h3>Use scoped role assignments instead of handing out a key</h3><p>Give the workload identity the Models User role on one alias and the Tools User role on one MCP server. The runtime presents a short-lived bearer token without an APIM product or subscription key.</p><button type="button" data-route="entra-access">Play the Entra access flow</button></article>
+        </div>
+        <div class="panel comparison note" tabindex="0" role="region" aria-label="Access comparison table; scroll horizontally as needed">
+          <table>
+            <thead><tr><th scope="col">Decision</th><th scope="col">Citadel access contract</th><th scope="col">Azure AI Gateway equivalent or gap</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Who may call?</th><td>The generated subscription selects the product; the JWT-enabled sample also validates the caller token and required role.</td><td>Assign <strong>AI Gateway Models User</strong> on the alias and <strong>AI Gateway Tools User</strong> on the MCP server to a workload principal or appropriate group. <strong>AI Gateway User</strong> can cover both types; avoid broad inherited roles unless intended.</td></tr>
+              <tr><th scope="row">What may they call?</th><td>API associations and product policy narrow the permitted models or assets.</td><td>Use alias and MCP server scopes. The Tools User role is not a per-tool entitlement: use server tool allow/block lists, or publish distinct narrowly configured servers when groups need different tool sets.</td></tr>
+              <tr><th scope="row">How much?</th><td>The sample meters consumption by APIM subscription; the mixed contract can use distinct counters per asset type.</td><td>Configure a gateway or asset policy and choose the counter. Caller identity can distinguish Entra callers by <code>tid</code> and <code>oid</code>. Claim-based cost overrides change each matching caller's allowance; they do not create a shared team budget.</td></tr>
+              <tr><th scope="row">Which credential reaches the backend?</th><td>The gateway has its own outbound configuration; the subscription and caller JWT do not grant backend access.</td><td>Configure outbound managed identity or a supported backend credential separately. For supported MCP backends, explicitly configure delegated on-behalf-of (OBO) when the backend must authorize the actual user.</td></tr>
+              <tr><th scope="row">What does not map?</th><td>The mixed sample bundles model, MCP and A2A access with custom product-policy logic.</td><td>Do not assume a one-to-one product bundle, arbitrary APIM XML parity, or A2A asset-level RBAC parity from the documented model and MCP roles. Verify each needed control independently.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note"><strong>Suggested rollout:</strong> Keep a versioned per-use-case record of principal, environment, exact alias and MCP server, policy settings, backend auth, and allow/deny tests. That can remain your team's “access contract,” even though the runtime uses native RBAC and policies. Verify an allowed alias and MCP server, a valid identity denied access to another alias, and a disallowed tool on the allowed server. Gateway API keys are broader than asset-scoped Entra access, so don't treat one as a per-contract replacement.</p>
+        <p class="note"><a data-source="identityDocs">Gateway security and identity</a> · <a data-source="entra">RBAC lab and token examples</a> · <a data-source="citadel">Citadel architecture lab</a></p>
+      </section>
+      <section id="new" aria-labelledby="new-title" hidden>
+        <div class="section-heading"><div><h2 id="new-title">What's new in Azure AI Gateway</h2><p class="muted">Selected capabilities from the official gateway documentation and release notes; not an exhaustive availability matrix.</p></div></div>
+        <div class="detail-grid">
+          <article class="panel"><span class="badge">Preview · MCP</span><h3>Agent Hooks</h3><p>Send an inline allow/deny decision to your own governance service before or after a tool call. A pre-call deny stops execution; a post-call deny withholds the result but can't undo side effects. Default <code>failClosed</code> blocks remote evaluation failures. <code>failOpen</code> permits continuation on those failures, not on explicit denies or failed local checks. Hooks are synchronous verdicts, not transforms or fire-and-forget callbacks.</p><p><a data-source="policyDocs">Policy guide</a> · <a data-source="hookReference">Policy reference</a></p><button type="button" data-route="hooks">Play the Agent Hooks trace</button></article>
+          <article class="panel"><span class="badge">Identity · MCP</span><h3>On-behalf-of backend authentication</h3><p>A configured MCP endpoint can exchange a delegated gateway token for a delegated backend token so the backend authorizes the signed-in user. This requires backend permissions and consent plus trusted managed identity for token exchange. An API key or app-only token cannot supply a user identity.</p><a data-source="releaseDocs">Gateway release notes</a></article>
+          <article class="panel"><span class="badge">Routing · Models</span><h3>Alias failover rules</h3><p>Priority and weight choose among configured deployments. Separately, configured failure rules can retry the same backend, switch to another eligible deployment, or temporarily exclude a failing backend within a per-request retry limit. A weighted split alone does not configure failover.</p><a data-source="failoverDocs">Gateway release notes on failover</a> · <a data-source="routing">Routing lab</a></article>
+          <article class="panel"><span class="badge">Governance · MCP</span><h3>Microsoft Agent 365 and threat protection</h3><p>Agent 365 inventories MCP servers and can block servers or tools; individual tool controls require a static allowed-tool list. Separately, tool threat protection applies Defender and Purview checks when configured with eligible licensing and delegated Entra user authentication. It is not the custom Agent Hooks policy.</p><a data-source="agent365">Agent 365 governance lab</a> · <a data-source="threat">Threat protection lab</a></article>
+          <article class="panel"><span class="badge">Spend · Monitoring</span><h3>Identity-based budgets and attribution</h3><p>Cost policies can override the default amount for a matching identity or validated token claims. The first matching override wins. Configured OpenTelemetry exports can carry selected claims; the gateway also accounts for streamed tokens without requiring the client to request usage.</p><a data-source="budget">Budget lab</a> · <a data-source="telemetry">OpenTelemetry lab</a> · <a data-source="streaming">Streaming lab</a></article>
+          <article class="panel"><span class="badge">Tooling · MCP</span><h3>Federated sources and protocol versions</h3><p>Compose a single endpoint from sources such as remote MCP servers, OpenAPI services, managed connectors, and Foundry Toolbox. Choose supported protocol versions on the server, including MCP <code>2026-07-28</code> where supported.</p><a data-source="tools">Federation lab</a> · <a data-source="releaseDocs">Gateway release notes</a></article>
+        </div>
+        <p class="note">These cards summarize the published capabilities, not live tenant verification. Consult the <a data-source="portalDocs">Azure AI Gateway docs</a> for current prerequisites and availability. No A2A access-contract parity or exact release date for Agent Hooks is asserted here.</p>
       </section>
       <section id="blueprint" aria-labelledby="blueprint-title" hidden>
         <div class="section-heading"><div><h2 id="blueprint-title">Deployment blueprint</h2><p class="muted">What you configure before any of these requests can run.</p></div><span class="badge">Guidance, not a deployment tool</span></div>
@@ -279,7 +321,7 @@
         <div class="section-heading"><div><h2 id="sources-title">Sources &amp; scope</h2><p class="muted">Every trace step links to the Azure/aigateway lab that documents it.</p></div></div>
         <div class="panel">
           <p>These teaching traces use example credentials and outcomes, not live calls, deployment instructions, or promises about service latency or policy order. Availability and supported configuration can change; consult the <a href="https://aka.ms/aigateway/docs">current service documentation</a> before deploying.</p>
-          <p>Lab links are pinned to the <a href="https://github.com/Azure/aigateway/tree/18803de4737bfb046d67e61e7bc307f0f710e5fe/labs">Azure/aigateway checkout</a> used to verify this explorer. For hands-on deployment, use the <a href="https://azure.github.io/aigateway/">current lab site</a>.</p>
+          <p>Product capabilities are sourced from the <a data-source="portalDocs">Azure AI Gateway docs</a>. Lab links are pinned to the <a href="https://github.com/Azure/aigateway/tree/18803de4737bfb046d67e61e7bc307f0f710e5fe/labs">Azure/aigateway checkout</a> used to verify the examples. For hands-on deployment, use the <a href="https://azure.github.io/aigateway/">current lab site</a>.</p>
           <ul class="source-list" id="source-list"></ul>
         </div>
       </section>
@@ -305,12 +347,25 @@
       telemetry: ["14-otel-chargeback", "Attribute tokens and cost with OpenTelemetry"],
       agents: ["16-foundry-hosted-agent", "Connect a Foundry hosted agent to the gateway"],
       network: ["18-private-networking", "Lock down backend traffic with private networking"],
+      threat: ["19-tool-threat-protection", "Protect tool calls with Agent 365 threat protection"],
+      agent365: ["20-agent-365-governance", "Govern MCP servers with Agent 365"],
       routing: ["22-model-routing", "Route an alias across models by priority and weight"],
       streaming: ["23-streaming-responses", "Stream responses and count every token"],
+      portalDocs: ["https://ai.gateway.azure.com/docs", "Azure AI Gateway product documentation"],
+      identityDocs: ["https://ai.gateway.azure.com/docs/security-identity", "Security and identity"],
+      policyDocs: ["https://ai.gateway.azure.com/docs/policies", "Gateway policies"],
+      releaseDocs: ["https://ai.gateway.azure.com/docs/releases/2026-09-10", "Gateway release notes"],
+      failoverDocs: ["https://ai.gateway.azure.com/docs/releases/2026-08-28", "Gateway release notes on failover"],
+      hookReference: ["https://github.com/Azure/aigateway/blob/18803de4737bfb046d67e61e7bc307f0f710e5fe/skills/manage-ai-gateway/references/policies.md#agenthooks-mcp-toolserver-only", "Azure/aigateway Agent Hooks policy reference"],
+      citadel: ["../foundry-citadel/", "Citadel access-contract walkthrough"],
     };
 
     const nodes = {
-      app: { x: 120, y: 120, title: "Application", label: "OpenAI-compatible client", source: "model", detail: "The client sends a model alias and authenticates to AI Gateway. It does not need the model provider credential.", boundary: "The alias is a stable client-facing name, not a backend deployment identifier." },
+      entra: { x: 120, y: 73, title: "Microsoft Entra ID", label: "Issues the caller token", source: "identityDocs", detail: "The workload acquires an access token for the gateway. A signed-in-user application uses delegated consent and a delegated token instead.", boundary: "A valid token identifies the caller; a role assignment authorizes the requested asset.", only: ["entra-access"] },
+      apim: { x: 390, y: 167, title: "Citadel / APIM", label: "Product policy · API routing", source: "citadel", detail: "The illustrated Citadel contract provisions an APIM product, API associations, a subscription and product policy. The consumer presents the subscription key plus a JWT in the JWT-enabled sample.", boundary: "The product selects the contract; the token validates the caller.", only: ["citadel-access"] },
+      contract: { x: 390, y: 302, title: "Citadel access contract", label: "Bicep parameters · XML", source: "citadel", detail: "The accelerator stores the active APIM subscription key and per-asset endpoint URLs in Key Vault.", boundary: "This configuration is not a serial hop in the inference request.", only: ["citadel-access"] },
+      hook: { x: 660, y: 305, title: "Governance service", label: "Agent Hooks · preview", source: "policyDocs", detail: "A configured decision service returns a synchronous allow or deny verdict before or after an MCP tool call.", boundary: "A post-call deny withholds the result, not the action already taken.", only: ["hooks"] },
+      app: { x: 120, y: 144, title: "Application", label: "Model API client", source: "model", detail: "The client authenticates to the gateway and selects a published model. It does not need the model provider credential.", boundary: "A client-facing alias need not expose the backend deployment identifier." },
       agent: { x: 120, y: 220, title: "Agent runtime", label: "Foundry or another client", source: "agents", detail: "The agent calls configured model and MCP endpoints. The Foundry lab uses an Entra Agent ID for model requests and the project managed identity for tools.", boundary: "The gateway governs those calls; the agent runtime chooses when to make them." },
       gateway: { x: 390, y: 167, title: "Azure AI Gateway", label: "Authenticate · govern · route", source: "overview", detail: "The dedicated gateway authenticates callers, evaluates configured policies, routes to configured destinations and records gateway signals.", boundary: "Caller authentication and authorization to the backend are separate." },
       config: { x: 390, y: 302, title: "Gateway configuration", label: "Aliases · sources · policies", source: "provision", detail: "Configure providers, model aliases, MCP sources and applicable policies through the gateway's management interfaces.", boundary: "Configuration changes behavior; it is not another hop taken by runtime traffic." },
@@ -333,7 +388,7 @@
           model, reply, deliver],
       },
       routing: {
-        nav: "Priority & weight", title: "Route one alias across two models", summary: "Watch a request land on the canary without changing the client.", outcome: "Canary route", caveat: "This trace picks the 20% canary route as an example. The lab also changes priority to prefer one model. It does not establish failover or retry guarantees.",
+        nav: "Priority & weight", title: "Route one alias across two models", summary: "Watch a request land on the canary without changing the client.", outcome: "Canary route", caveat: "This trace picks the 20% canary route as an example. The lab also changes priority to prefer one model. Failover requires separate rules, described in What's new.",
         steps: [
           step("config", "config", "gateway", "Set priority and weight", "The platform team assigns both members of the chat alias the same priority and gives them weights of 80 and 20.", "Changing the alias configuration doesn't require clients to change the model name they send.", "routing"),
           submit,
@@ -399,6 +454,40 @@
           step("telemetry", "gateway", "metrics", "Emit gateway signals", "The gateway records usage and can export metrics, logs and traces with selected caller attributes to configured observability destinations.", "Operations can correlate outcomes, tokens, estimated cost and caller context separately from serving the reply.", "telemetry"),
           step("telemetry", "metrics", "metrics", "Group usage for chargeback", "The lab groups request logs by tenant, client app, and API key. It also shows how to query token and cost metrics without double counting token types.", "A shared gateway can provide data for cost attribution without putting the report in the runtime path.", "telemetry")],
       },
+      "citadel-access": {
+        nav: "Citadel contract", title: "Citadel: select the contract with an APIM subscription", summary: "Follow the model leg of an illustrated JWT-enabled Citadel contract.", outcome: "Subscription key + JWT", caveat: "This is the Citadel/APIM path, not the dedicated Azure AI Gateway runtime. A mixed contract can associate model, MCP and A2A APIs; this trace highlights the model request only.",
+        steps: [
+          step("config", "contract", "apim", "Deploy the use-case contract", "The accelerator provisions a product, API associations, subscription and product policy. It writes the active subscription key and per-asset endpoint URLs to Key Vault.", "One contract bundles credentials, allowed assets and limits.", "citadel"),
+          step("request", "app", "apim", "Send the subscription key and JWT", "The support workload calls the configured endpoint with the APIM subscription key and its caller JWT.", "A managed identity can supply the JWT, but doesn't remove the subscription key in this sample.", "citadel"),
+          step("policy", "apim", "apim", "Apply the product policy", "APIM resolves the contract, checks the JWT and required role, checks the model allowlist and enforces the subscription-scoped token limit.", "The subscription identifies the contract for this sample's counters.", "citadel"),
+          step("request", "apim", "model", "Call the approved backend", "APIM uses its separately configured backend authentication to call the model.", "Neither caller credential grants the backend access on its own.", "citadel"),
+          step("response", "model", "apim", "Receive the model result", "The approved deployment returns its result to APIM.", "The caller does not need the backend's credentials.", "citadel"),
+          step("response", "apim", "app", "Return the result", "APIM sends the governed response to the application.", "Compare with the Entra flow: native role assignments replace product membership and key distribution for covered assets.", "citadel")],
+      },
+      "entra-access": {
+        nav: "Entra scoped access", title: "AI Gateway: grant the workload access to specific assets", summary: "Follow an allowed model call, then a different alias denied to the same identity.", outcome: "Keyless · allowed then 403", caveat: "This is an app-only flow using a managed identity. A signed-in-user client requests https://ai.gateway.azure.com/Data.All with delegated consent; backend OBO is a separate, optional MCP configuration.",
+        steps: [
+          step("config", "config", "gateway", "Assign just the two asset roles", "Give the support workload AI Gateway Models User on the support alias and AI Gateway Tools User on the approved MCP server. Configure limits separately.", "Narrow grants replace the APIM product for these entitlements. Don't add a workspace-wide role if the workload should be denied access to other assets.", "entra"),
+          step("request", "app", "entra", "Request an app-only token", "The workload asks for the https://ai.gateway.azure.com/.default scope using its managed identity.", "There is no gateway subscription key to store or rotate.", "entra"),
+          step("response", "entra", "app", "Receive the gateway token", "Entra returns an access token for the AI Gateway resource.", "The token identifies the principal; it isn't a grant on every alias or server.", "entra"),
+          step("request", "app", "gateway", "Invoke the approved alias with Bearer", "The caller sends its token in the Authorization: Bearer header and selects the support alias.", "The asset name stays separate from the caller credential.", "identityDocs"),
+          step("policy", "gateway", "gateway", "Authorize this alias and evaluate policy", "AI Gateway validates the token and checks the caller's role at the requested alias. Configured model policies still apply.", "RBAC grants access; rate limits and budgets are separate controls.", "entra"),
+          model, reply, deliver,
+          step("request", "app", "gateway", "Try an unassigned alias", "The same caller uses a valid gateway token but names another alias.", "Authentication doesn't change just because the requested resource changed.", "entra"),
+          step("error", "gateway", "app", "Reject the other alias with 403", "With no matching role, including any inherited role, the gateway returns 403 before calling the backend.", "The same pattern can scope an entitlement to one MCP server, while server policy determines which tools it exposes.", "entra")],
+      },
+      hooks: {
+        nav: "Agent Hooks (preview)", title: "Agent Hooks: allow execution, then withhold a result", summary: "See the difference between authorizing a tool action and screening its output.", outcome: "Tool ran · result withheld", caveat: "This walkthrough uses both phases. If the pre-call verdict were deny, the tool would not run. If a post-call verdict denies, don't automatically retry a call that already ran.",
+        steps: [
+          step("request", "agent", "gateway", "Call a governed MCP tool", "The agent invokes a tool on a server with an Agent Hooks policy configured.", "The hook lives at the gateway's MCP server boundary, not in the agent's planning loop.", "hookReference"),
+          step("request", "gateway", "hook", "Ask for a pre-call decision", "The gateway calls the configured preToolCall decision service before invoking the tool.", "Use a pre-call check for rules that must prevent side effects.", "policyDocs"),
+          step("response", "hook", "gateway", "Allow this execution", "The service returns allow. This is an inline verdict, not a transformation or background callback.", "An explicit deny would stop the call before the MCP backend receives it.", "releaseDocs"),
+          step("request", "gateway", "tools", "Invoke the tool", "The MCP source performs the now-authorized operation.", "The tool may change external state before a post-call hook runs.", "policyDocs"),
+          step("response", "tools", "gateway", "Receive the completed result", "The tool returns its output to the gateway.", "Successful execution doesn't imply that the result can be shown to the caller.", "policyDocs"),
+          step("request", "gateway", "hook", "Ask for a post-call decision", "The configured postToolCall service evaluates the completed tool call.", "The post-call phase can gate what the agent sees, not whether the operation already happened.", "hookReference"),
+          step("response", "hook", "gateway", "Return an explicit deny", "The decision service rejects the result. An explicit deny still applies if remote failure handling is configured as failOpen.", "Failure handling controls callback failures, not explicit policy verdicts.", "releaseDocs"),
+          step("error", "gateway", "agent", "Withhold the output", "The agent does not receive the tool result. The gateway cannot undo the tool's side effects.", "Do not blindly retry; the underlying change may already have succeeded.", "policyDocs")],
+      },
     };
 
     const kinds = { request: "Request", response: "Response", policy: "Policy decision", error: "Stopped", telemetry: "Telemetry", config: "Configuration" };
@@ -407,7 +496,7 @@
     const state = { route: "", index: 0, selected: null, playing: false, elapsed: 0, frame: 0, last: null, motion: !reducedMotion.matches, manualMotion: false };
     const svgNS = "http://www.w3.org/2000/svg";
     const flowNames = Object.keys(flows);
-    const detailPanels = ["blueprint", "sources"];
+    const detailPanels = ["access", "new", "blueprint", "sources"];
     const stepNumber = (index) => String(index + 1).padStart(2, "0");
     let activePath;
     let activePackets = [];
@@ -423,13 +512,16 @@
 
     function setSource(anchor, key) {
       const [path, title] = sources[key];
-      anchor.href = `${sourceBase}${path}/README.md`;
+      anchor.href = path.startsWith("https://") || path.startsWith("../") ? path : `${sourceBase}${path}/README.md`;
       anchor.title = title;
     }
 
     function pathBetween(from, to) {
       const a = nodes[from], b = nodes[to];
-      if (a.x === b.x) return `M${a.x} ${a.y - 26} V${b.y + 26}`;
+      if (a.x === b.x) {
+        const sign = Math.sign(b.y - a.y);
+        return `M${a.x} ${a.y + sign * 26} V${b.y - sign * 26}`;
+      }
       const sign = Math.sign(b.x - a.x);
       const start = a.x + sign * 94, end = b.x - sign * 94;
       const mid = (start + end) / 2;
@@ -440,6 +532,9 @@
       const flow = flows[state.route];
       const relevant = new Set(flow.steps.flatMap(({ from, to }) => [from, to]));
       for (const [id, group] of mapNodes) {
+        const excluded = state.route === "citadel-access" && ["gateway", "config", "alternate", "tools", "metrics"].includes(id)
+          || state.route === "hooks" && id === "metrics";
+        group.toggleAttribute("hidden", excluded || nodes[id].only?.includes(state.route) === false);
         group.setAttribute("class", ["node", id === current.from || id === current.to ? `active ${current.kind}` : "", relevant.has(id) ? "relevant" : "", id === state.selected ? "policy" : ""].join(" "));
         group.setAttribute("aria-pressed", String(id === state.selected));
       }
@@ -509,6 +604,7 @@
       $("flow-summary").textContent = flow.summary;
       $("outcome").textContent = flow.outcome;
       $("caveat").textContent = flow.caveat;
+      $("related-traces").hidden = !["citadel-access", "entra-access", "hooks", "routing"].includes(state.route);
       $("step-range").max = flow.steps.length - 1;
       journeyButtons = flow.steps.map(({ title }, index) => {
         const button = document.createElement("button");

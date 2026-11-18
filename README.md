@@ -25,7 +25,7 @@ Reference documentation and architecture guidance.
 | Document | Description |
 |---|---|
 | [`foundry-citadel/`](docs/foundry-citadel/) | Foundry-style AI Citadel explorer with six animated traffic flows, annotated publish/access contracts, two network layouts and four-layer activation guidance |
-| [`azure-ai-gateway/`](docs/azure-ai-gateway/) | Companion explorer for the dedicated Azure AI Gateway resource, with nine animated traces and a deployment blueprint linked to Azure/aigateway labs |
+| [`azure-ai-gateway/`](docs/azure-ai-gateway/) | Animated architecture explorer with a Citadel access-contract comparison, scoped Entra access, Agent Hooks, and a guide to recent capabilities |
 | [`foundry-iq/`](docs/foundry-iq/) | Portal-style Foundry IQ walkthrough: PDF ingestion, knowledge bases, dynamic Excel generation, chunk counts and customer acceptance gates |
 | [`foundry-snowflake/`](docs/foundry-snowflake/) | Interactive Microsoft Foundry + Snowflake MCP walkthrough, including PAT, native OAuth, and Entra OBO flows; images and diagram renderer are embedded |
 | `ingress-digest/` | Azure ingress architecture options with mapping to Azure Learn and Well-Architected guidance |
@@ -54,6 +54,10 @@ limits, cost budgets, content safety, hosted agents and usage attribution. Serve
 `docs/` and open `/azure-ai-gateway/`, or open its self-contained HTML file
 directly. The guide uses the dedicated `Microsoft.ApiManagement/aigateways`
 resource and does not assume Citadel's API Management contracts.
+The [access comparison](https://pankajagrawal16.github.io/artifacts/azure-ai-gateway/#access)
+shows which Citadel mechanics scoped Entra RBAC replaces and which still require
+policy or backend configuration. [What's new](https://pankajagrawal16.github.io/artifacts/azure-ai-gateway/#new)
+includes an animated Agent Hooks preview trace and links to the product docs.
 
 Its **Access contracts** workspace explains model-only, MCP, A2A and mixed-asset
 examples using the accelerator's Bicep parameter and APIM product-policy XML
