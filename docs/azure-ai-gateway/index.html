@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Trace model routing, MCP federation, policy decisions, hosted-agent calls and telemetry in Azure AI Gateway.">
+  <title>Azure AI Gateway | Architecture Lab</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--cp-bg); color: var(--cp-text); font: 14px/1.5 "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; }
+    h1, h2, h3, p { margin: 0; }
+    a { color: var(--cp-link); text-underline-offset: 3px; }
+    button, select, input { font: inherit; accent-color: var(--cp-accent); }
+    button, select { color: inherit; background: var(--cp-surface); border: 1px solid var(--cp-border-strong); border-radius: .625rem; padding: 6px 12px; }
+    button { cursor: pointer; }
+    button:hover:not(:disabled), select:hover { border-color: var(--cp-accent); }
+    button:disabled { opacity: .48; cursor: default; }
+    :focus-visible { outline: 2px solid var(--cp-accent); outline-offset: 3px; }
+    .skip { position: absolute; top: -80px; left: 16px; z-index: 3; background: var(--cp-surface); padding: 8px; }
+    .skip:focus { top: 8px; }
+    code, .index, .eyebrow, .badge, .lane-label, .edge-note { font-family: Consolas, "Courier New", Courier, monospace; }
+    code { overflow-wrap: anywhere; }
+    .muted, .eyebrow, .badge, .number, .node-detail { color: var(--cp-text-soft); }
+    .eyebrow { font-size: .75rem; text-transform: uppercase; letter-spacing: .09em; font-weight: 700; }
+    .badge { display: inline-block; font-size: .73rem; border: 1px solid var(--cp-border); background: var(--cp-surface-soft); padding: 4px 8px; border-radius: .625rem; }
+    .accent { color: var(--cp-accent); }
+    .mark { width: 36px; height: 36px; display: grid; place-items: center; flex: none; background: var(--cp-accent-soft); color: var(--cp-accent); border-radius: .625rem; font-weight: 700; }
+    .topbar { background: var(--cp-surface); border-bottom: 1px solid var(--cp-border); min-height: 60px; padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+    .topbar strong { display: block; }
+    .topbar small { display: block; color: var(--cp-text-soft); }
+    .header-actions { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+    .shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); max-width: 1800px; margin: auto; min-height: calc(100dvh - 60px); }
+    .sidebar { background: var(--cp-bg-elevated); border-right: 1px solid var(--cp-border); padding: 24px 12px; }
+    .sidebar .eyebrow { margin: 8px 8px 6px; }
+    .sidebar nav { display: grid; gap: 4px; }
+    .nav-group { display: grid; gap: 3px; }
+    .nav-button { border-color: var(--cp-bg-elevated); background: var(--cp-bg-elevated); width: 100%; text-align: left; padding: 8px; }
+    .nav-button .index { display: inline-block; width: 30px; color: var(--cp-text-soft); font-size: .8rem; }
+    .nav-button[aria-current="page"] { border-color: var(--cp-border); background: var(--cp-accent-soft); color: var(--cp-accent); font-weight: 700; }
+    .sidebar-note { border-top: 1px solid var(--cp-border); margin: 20px 8px 0; padding-top: 16px; font-size: .82rem; }
+    main { padding: clamp(16px, 3vw, 36px); min-width: 0; }
+    h1 { font-size: clamp(2rem, 3.8vw, 3rem); line-height: 1.15; letter-spacing: -.035em; margin: 4px 0 8px; }
+    h2 { font-size: 1.4rem; line-height: 1.25; }
+    h3 { font-size: 1.08rem; line-height: 1.35; }
+    .overview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 20px 0 24px; }
+    .overview button { text-align: left; border: 1px solid var(--cp-border); padding: 10px 12px; min-width: 0; }
+    .overview strong { display: block; margin-top: 2px; }
+    .section-heading, .workspace-heading, .playback, .transport, .options, .inspector-label, .canvas-label, .legend { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .section-heading, .workspace-heading, .inspector-label, .canvas-label { justify-content: space-between; }
+    .section-heading { margin-bottom: 12px; }
+    .panel, .workspace, .note { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 16px; }
+    .workspace-heading, .playback { padding: 12px 16px; border-bottom: 1px solid var(--cp-border); }
+    .workspace-heading { justify-content: flex-start; gap: 12px; }
+    .workspace-heading .badge { margin-left: auto; }
+    .primary { background: var(--cp-accent); border-color: var(--cp-accent); color: var(--cp-accent-fg); min-width: 72px; }
+    .primary:hover:not(:disabled) { background: var(--cp-accent-hover); }
+    .playback label.progress { display: flex; align-items: center; flex: 1 1 150px; gap: 8px; min-width: 0; }
+    #step-range { flex: 1 1 0; min-width: 60px; }
+    #step-count { min-width: 45px; text-align: center; white-space: nowrap; }
+    .trace-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(235px, 29%); }
+    .map-column { min-width: 0; padding: 12px; }
+    .canvas-label { margin-bottom: 8px; }
+    .diagram { border: 1px solid var(--cp-border); border-radius: .625rem; overflow-x: auto; background-color: var(--cp-bg-elevated); background-image: radial-gradient(var(--cp-border) 1px, var(--cp-bg-elevated) 1px); background-size: 16px 16px; }
+    #map { display: block; width: 100%; min-width: 590px; }
+    .lane { fill: var(--cp-surface); fill-opacity: .55; stroke: var(--cp-border); }
+    .lane.gateway-zone { fill: var(--cp-accent-soft); stroke: var(--cp-border-strong); }
+    .lane-label { fill: var(--cp-text-soft); font-size: 12px; letter-spacing: .09em; font-weight: 700; }
+    .edge { fill: none; stroke: var(--cp-border-strong); stroke-width: 1.6; stroke-opacity: .45; }
+    .edge.active { stroke: var(--kind); stroke-width: 3; stroke-opacity: 1; }
+    .dashed { stroke-dasharray: 6 5; }
+    .node { cursor: pointer; }
+    .node rect { fill: var(--cp-surface); stroke: var(--cp-border-strong); stroke-width: 1.1; }
+    .node.active rect, .node[aria-pressed="true"] rect { stroke: var(--kind); stroke-width: 2.5; }
+    .node:not(.relevant) rect { fill: var(--cp-bg-elevated); stroke: var(--cp-border); }
+    .node:hover rect, .node:focus-visible rect { stroke: var(--cp-accent); stroke-width: 2.5; }
+    .node-title { fill: var(--cp-text); font-size: 15px; font-weight: 700; }
+    .node-subtitle { fill: var(--cp-text-soft); font-size: 12px; }
+    .edge-note { fill: var(--cp-text-soft); font-size: 11px; }
+    .packet { fill: var(--kind); stroke: var(--cp-surface); stroke-width: 2; }
+    .legend { margin-top: 10px; font-size: .8rem; column-gap: 12px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .legend-item::before { content: ""; width: 15px; border-top: 2px solid var(--kind); }
+    .legend-item.side::before { border-top-style: dashed; }
+    .request { --kind: var(--cp-link); }
+    .response { --kind: var(--cp-success); }
+    .policy { --kind: var(--cp-accent); }
+    .error { --kind: var(--cp-danger); }
+    .telemetry { --kind: var(--cp-warning); }
+    .config { --kind: var(--cp-text-soft); }
+    .inspector { min-width: 0; border-left: 1px solid var(--cp-border); padding: 12px 16px; }
+    .inspector-label { padding-bottom: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--cp-border); }
+    .inspector h3 { margin: 4px 0 6px; }
+    .value { background: var(--cp-accent-soft); margin: 12px 0; border-radius: .625rem; padding: 8px 12px; }
+    .value strong { display: block; }
+    .journey { margin: 0; list-style: none; padding: 4px 0 0; display: grid; gap: 4px; }
+    .journey button { background: var(--cp-surface); border-color: var(--cp-border); padding: 5px 8px; font-size: .82rem; width: 100%; display: flex; gap: 8px; text-align: left; }
+    .journey button[aria-current="step"] { border-color: var(--cp-accent); background: var(--cp-accent-soft); color: var(--cp-accent); font-weight: 700; }
+    .note { margin-top: 12px; padding: 12px 16px; }
+    .note strong { color: var(--cp-accent); }
+    .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .panel { padding: 16px; }
+    .panel h3 { margin: 4px 0 6px; }
+    .panel p { margin: 4px 0 8px; }
+    .panel .nav-button { display: inline-block; width: auto; }
+    .source-list { list-style: none; margin: 0; padding: 0; }
+    .source-list li { padding: 10px 0; border-top: 1px solid var(--cp-border); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    @media (max-width: 1190px) { .trace-grid { grid-template-columns: minmax(0, 1fr); } .inspector { border-left: 0; border-top: 1px solid var(--cp-border); } .journey { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); } }
+    @media (max-width: 800px) { .shell { grid-template-columns: minmax(0, 1fr); } .sidebar { padding: 8px 16px 12px; border-right: 0; border-bottom: 1px solid var(--cp-border); } .sidebar nav, .nav-group { display: flex; flex-wrap: wrap; gap: 4px; } .sidebar .nav-button { width: auto; } .sidebar .eyebrow, .sidebar-note { display: none; } }
+    @media (max-width: 540px) { .topbar { padding: 8px 12px; } .header-actions { gap: 8px; } .overview { grid-template-columns: repeat(2, minmax(0, 1fr)); } .detail-grid { grid-template-columns: 1fr; } .nav-button { font-size: .82rem; } .nav-button .index { width: 24px; } .playback label.progress { order: 1; flex-basis: 100%; } .workspace-heading .badge { margin-left: 0; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <span class="mark" aria-hidden="true">AG</span>
+    <div><strong>Azure AI Gateway</strong><small>Architecture lab</small></div>
+    <div class="header-actions"><a href="../">All artifacts</a><button type="button" id="theme">Theme: light</button></div>
+  </header>
+  <div class="shell">
+    <aside class="sidebar">
+      <nav aria-label="Architecture workspace">
+        <p class="eyebrow">Guided flows</p>
+        <div class="nav-group" id="flows"></div>
+        <p class="eyebrow">Understand &amp; build</p>
+        <button class="nav-button" data-route="blueprint">Deployment blueprint</button>
+        <button class="nav-button" data-route="sources">Sources &amp; scope</button>
+      </nav>
+      <p class="sidebar-note muted">Illustrative environment<br>No Azure connection or live data</p>
+    </aside>
+    <main id="main" tabindex="-1">
+      <p class="eyebrow accent">Architecture lab / Runtime governance</p>
+      <h1>Azure AI Gateway</h1>
+      <p class="muted">Follow apps and agents through one gateway to models and tools. See what gets routed, what gets stopped, and what gets measured.</p>
+      <div class="overview" aria-label="Explore by capability">
+        <button data-route="routing"><span class="eyebrow accent">01 / Models</span><strong>Aliases &amp; routing</strong></button>
+        <button data-route="tools"><span class="eyebrow accent">02 / Tools</span><strong>MCP federation</strong></button>
+        <button data-route="limits"><span class="eyebrow accent">03 / Governance</span><strong>Policies &amp; identity</strong></button>
+        <button data-route="telemetry"><span class="eyebrow accent">04 / Operations</span><strong>Monitoring &amp; cost</strong></button>
+      </div>
+      <section id="traffic" aria-labelledby="traffic-title">
+        <div class="section-heading">
+          <div><h2 id="traffic-title">Traffic explorer</h2><p class="muted">Play a trace, scrub to any step, or inspect a component on the map.</p></div>
+          <span class="badge">Teaching sequence · not measured latency</span>
+        </div>
+        <div class="workspace">
+          <div class="workspace-heading"><span class="mark index" id="flow-index" aria-hidden="true">01</span><div><h3 id="flow-title"></h3><p class="muted" id="flow-summary"></p></div><span class="badge" id="outcome"></span></div>
+          <div class="playback" aria-label="Flow playback">
+            <div class="transport">
+              <button type="button" class="primary" id="play">Play</button>
+              <button type="button" id="previous" title="Previous step" aria-label="Previous step">‹</button>
+              <button type="button" id="next" title="Next step" aria-label="Next step">›</button>
+              <button type="button" id="restart">Restart</button>
+            </div>
+            <label class="progress"><span class="sr-only">Walkthrough step</span><input id="step-range" type="range" min="0" max="1" value="0"><output class="number" id="step-count" for="step-range"></output></label>
+            <div class="options">
+              <label><span class="sr-only">Playback speed</span><select id="speed"><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+              <button type="button" id="motion" aria-pressed="true">Motion on</button>
+            </div>
+          </div>
+          <div class="trace-grid">
+            <div class="map-column">
+              <div class="canvas-label"><span class="eyebrow">Architecture canvas</span><span class="muted">Select a node for details</span></div>
+              <div class="diagram" tabindex="0" role="region" aria-label="Architecture diagram; scroll horizontally as needed">
+                <svg id="map" viewBox="0 0 780 377" role="group" aria-labelledby="map-title map-desc" xmlns="http://www.w3.org/2000/svg">
+                  <title id="map-title">Azure AI Gateway request map</title>
+                  <desc id="map-desc">Callers on the left reach Azure AI Gateway in the center. Model and tool backends on the right serve configured requests. Configuration and telemetry are not extra runtime hops.</desc>
+                  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 10 5 0 10z" fill="context-stroke"/></marker></defs>
+                  <rect class="lane" x="12" y="12" width="216" height="341" rx="14"/>
+                  <rect class="lane gateway-zone" x="271" y="12" width="238" height="341" rx="14"/>
+                  <rect class="lane" x="552" y="12" width="216" height="341" rx="14"/>
+                  <text class="lane-label" x="28" y="39">01 · CALLERS</text>
+                  <text class="lane-label" x="287" y="39">02 · GATEWAY BOUNDARY</text>
+                  <text class="lane-label" x="568" y="39">03 · DESTINATIONS</text>
+                  <g id="paths" aria-hidden="true"></g>
+                  <g id="nodes"></g>
+                  <g id="packets" aria-hidden="true"></g>
+                  <text class="edge-note" x="390" y="369" text-anchor="middle">Configuration and telemetry are not runtime hops.</text>
+                </svg>
+              </div>
+              <div class="legend" aria-label="Trace legend"><span class="legend-item request">Request</span><span class="legend-item response">Response</span><span class="legend-item policy">In-gateway decision</span><span class="legend-item error">Stopped</span><span class="legend-item config side">Configuration</span><span class="legend-item telemetry side">Telemetry</span></div>
+            </div>
+            <aside class="inspector" aria-label="Trace inspector">
+              <div class="inspector-label"><strong id="inspector-name">Trace inspector</strong><span class="badge" id="step-kind"></span></div>
+              <div id="step-panel">
+                <p class="eyebrow accent" id="step-index"></p>
+                <h3 id="step-title"></h3>
+                <p id="step-text"></p>
+                <p class="value"><strong>Why it matters</strong><span id="step-value"></span></p>
+                <a id="step-source">Read the source lab</a>
+              </div>
+              <div id="component-panel" hidden>
+                <h3 id="component-title" tabindex="-1"></h3>
+                <p id="component-text"></p>
+                <p class="value"><strong>Boundary to remember</strong><span id="component-value"></span></p>
+                <a id="component-source">Read the source lab</a>
+                <p style="margin-top: 12px"><button type="button" id="return">Return to trace</button></p>
+              </div>
+              <p class="eyebrow" style="margin-top: 16px">Journey / Choose a step</p>
+              <ol class="journey" id="journey"></ol>
+              <p class="sr-only" id="announcement" role="status" aria-atomic="true"></p>
+            </aside>
+          </div>
+        </div>
+        <p class="note"><strong>Scope of this trace:</strong> <span id="caveat"></span></p>
+      </section>
+      <section id="blueprint" aria-labelledby="blueprint-title" hidden>
+        <div class="section-heading"><div><h2 id="blueprint-title">Deployment blueprint</h2><p class="muted">What you configure before any of these requests can run.</p></div><span class="badge">Guidance, not a deployment tool</span></div>
+        <div class="detail-grid">
+          <article class="panel"><span class="eyebrow accent">01 / Resource</span><h3>Provision the gateway</h3><p>Create a <code>Microsoft.ApiManagement/aigateways</code> resource. Choose the supported ingress and backend networking for your deployment. For private backends, plan network integration and name resolution explicitly.</p><a data-source="provision">Provisioning lab</a> · <a data-source="network">Private networking lab</a></article>
+          <article class="panel"><span class="eyebrow accent">02 / Supply</span><h3>Publish models and tools</h3><p>Configure providers and backend models, then publish an alias clients can use. Register MCP sources under a federated endpoint and decide which namespaced tools to expose.</p><a data-source="aliases">Multi-provider aliases lab</a> · <a data-source="tools">MCP federation lab</a></article>
+          <article class="panel"><span class="eyebrow accent">03 / Governance</span><h3>Scope identity and guardrails</h3><p>Give callers appropriate runtime keys or Entra role assignments. Configure backend credentials or managed identity separately. Apply and verify limits, budgets and content-safety policies where supported.</p><a data-source="entra">Entra and RBAC lab</a> · <a data-source="backend">Backend identity lab</a> · <a data-source="baseline">Gateway baselines lab</a></article>
+          <article class="panel"><span class="eyebrow accent">04 / Operations</span><h3>Verify allowed and denied outcomes</h3><p>Run a known-good request, check policy failures and the chosen backend, and verify Monitoring. If exporting identity claims for attribution, choose only what you need and check what the callers' tokens actually carry.</p><a data-source="monitor">Monitoring lab</a> · <a data-source="telemetry">OpenTelemetry lab</a></article>
+        </div>
+        <p class="note"><strong>Different from Citadel:</strong> This explorer shows the dedicated Azure AI Gateway resource and its configuration. The <a href="../foundry-citadel/">AI Citadel explorer</a> uses an API Management accelerator with backend, publish and access contracts. Those contracts and network layers are not assumed here.</p>
+      </section>
+      <section id="sources" aria-labelledby="sources-title" hidden>
+        <div class="section-heading"><div><h2 id="sources-title">Sources &amp; scope</h2><p class="muted">Every trace step links to the Azure/aigateway lab that documents it.</p></div></div>
+        <div class="panel">
+          <p>These teaching traces use example credentials and outcomes, not live calls, deployment instructions, or promises about service latency or policy order. Availability and supported configuration can change; consult the <a href="https://aka.ms/aigateway/docs">current service documentation</a> before deploying.</p>
+          <p>Lab links are pinned to the <a href="https://github.com/Azure/aigateway/tree/18803de4737bfb046d67e61e7bc307f0f710e5fe/labs">Azure/aigateway checkout</a> used to verify this explorer. For hands-on deployment, use the <a href="https://azure.github.io/aigateway/">current lab site</a>.</p>
+          <ul class="source-list" id="source-list"></ul>
+        </div>
+      </section>
+    </main>
+  </div>
+  <noscript><p class="note">Enable JavaScript to play the teaching traces, or read the <a href="https://azure.github.io/aigateway/">Azure AI Gateway labs</a>.</p></noscript>
+  <script>
+    const sourceBase = "https://github.com/Azure/aigateway/blob/18803de4737bfb046d67e61e7bc307f0f710e5fe/labs/";
+    const sources = {
+      overview: ["00-how-ai-gateway-works", "How Azure AI Gateway works"],
+      provision: ["01-provision-gateway", "Provision a gateway"],
+      model: ["02-first-model-call", "Publish a Foundry model and make your first call"],
+      aliases: ["03-multi-provider-aliases", "Publish models behind stable aliases"],
+      tools: ["04-federate-mcp-tools", "Federate MCP tools behind one endpoint"],
+      toolPolicy: ["05-mcp-tool-controls", "Control which tools agents can call"],
+      limits: ["06-token-limits", "Throttle tokens per caller"],
+      budget: ["07-cost-budgets", "Enforce cost budgets with per-caller overrides"],
+      safety: ["08-content-safety", "Screen prompts and responses"],
+      baseline: ["09-gateway-baselines", "Set gateway-wide policy baselines"],
+      entra: ["11-entra-rbac", "Go keyless with Microsoft Entra ID and RBAC"],
+      backend: ["12-backend-identity", "Call backends with managed identities"],
+      monitor: ["13-monitoring", "Monitor usage, cost, and traces"],
+      telemetry: ["14-otel-chargeback", "Attribute tokens and cost with OpenTelemetry"],
+      agents: ["16-foundry-hosted-agent", "Connect a Foundry hosted agent to the gateway"],
+      network: ["18-private-networking", "Lock down backend traffic with private networking"],
+      routing: ["22-model-routing", "Route an alias across models by priority and weight"],
+      streaming: ["23-streaming-responses", "Stream responses and count every token"],
+    };
+
+    const nodes = {
+      app: { x: 120, y: 120, title: "Application", label: "OpenAI-compatible client", source: "model", detail: "The client sends a model alias and authenticates to AI Gateway. It does not need the model provider credential.", boundary: "The alias is a stable client-facing name, not a backend deployment identifier." },
+      agent: { x: 120, y: 220, title: "Agent runtime", label: "Foundry or another client", source: "agents", detail: "The agent calls configured model and MCP endpoints. The Foundry lab uses an Entra Agent ID for model requests and the project managed identity for tools.", boundary: "The gateway governs those calls; the agent runtime chooses when to make them." },
+      gateway: { x: 390, y: 167, title: "Azure AI Gateway", label: "Authenticate · govern · route", source: "overview", detail: "The dedicated gateway authenticates callers, evaluates configured policies, routes to configured destinations and records gateway signals.", boundary: "Caller authentication and authorization to the backend are separate." },
+      config: { x: 390, y: 302, title: "Gateway configuration", label: "Aliases · sources · policies", source: "provision", detail: "Configure providers, model aliases, MCP sources and applicable policies through the gateway's management interfaces.", boundary: "Configuration changes behavior; it is not another hop taken by runtime traffic." },
+      model: { x: 660, y: 83, title: "Model A", label: "Configured deployment", source: "model", detail: "An alias can resolve to a configured model deployment, such as a Foundry model.", boundary: "The provider retains its own model behavior and service limits." },
+      alternate: { x: 660, y: 153, title: "Model B", label: "Second alias member", source: "routing", detail: "A second configured deployment can share the alias. Priority chooses the preferred tier and weight splits traffic within a tier.", boundary: "An 80/20 split describes traffic across many requests, not duplicates of one request." },
+      tools: { x: 660, y: 223, title: "MCP sources", label: "One or more backends", source: "tools", detail: "Federation exposes namespaced tools from registered sources through the gateway's MCP endpoint.", boundary: "An allowed invocation goes to the matching registered source, not every source." },
+      metrics: { x: 660, y: 305, title: "Observability", label: "Monitoring · App Insights", source: "telemetry", detail: "Gateway request logs, traces and metrics can carry configured identity attributes for reporting.", boundary: "Telemetry and reporting are separate from the model response path." },
+    };
+
+    const step = (kind, from, to, title, text, value, source) => ({ kind, from, to, title, text, value, source });
+    const submit = step("request", "app", "gateway", "Call the alias", "The client sends a request to the gateway using the published model alias.", "Clients don't need to know which physical deployment will serve the request.", "model");
+    const model = step("request", "gateway", "model", "Invoke the configured model", "The gateway forwards the request to the configured model deployment. This walkthrough uses managed identity on the backend hop.", "The gateway needs the backend's required permission; granting the caller access to the gateway doesn't grant access to Foundry.", "backend");
+    const reply = step("response", "model", "gateway", "Receive the model result", "The backend returns the model response to the gateway.", "The client does not make a separate call to the model endpoint.", "model");
+    const deliver = step("response", "gateway", "app", "Return the response", "The model result goes back to the calling application through the gateway.", "The app stays on the same gateway endpoint and alias.", "model");
+    const flows = {
+      inference: {
+        nav: "First model call", title: "A governed model call", summary: "Separate the caller's access from the gateway's backend identity.", outcome: "Model response", caveat: "This example uses Microsoft Entra for the caller and managed identity for the Foundry backend. Runtime API keys are another documented caller option.",
+        steps: [submit,
+          step("policy", "gateway", "gateway", "Authorize the caller", "The gateway validates a Microsoft Entra token. The lab grants the caller the AI Gateway User role.", "Azure resource management permission and the ability to call the runtime are different concerns.", "entra"),
+          model, reply, deliver],
+      },
+      routing: {
+        nav: "Priority & weight", title: "Route one alias across two models", summary: "Watch a request land on the canary without changing the client.", outcome: "Canary route", caveat: "This trace picks the 20% canary route as an example. The lab also changes priority to prefer one model. It does not establish failover or retry guarantees.",
+        steps: [
+          step("config", "config", "gateway", "Set priority and weight", "The platform team assigns both members of the chat alias the same priority and gives them weights of 80 and 20.", "Changing the alias configuration doesn't require clients to change the model name they send.", "routing"),
+          submit,
+          step("policy", "gateway", "gateway", "Choose a tier and a member", "The gateway prefers the lowest priority number. Within the selected tier, weights divide traffic; this example lands on the 20% member.", "Priority picks the tier. Weight splits traffic among its members.", "routing"),
+          step("request", "gateway", "alternate", "Invoke only the canary", "The gateway sends this request to Model B, the selected deployment.", "Weighted traffic splitting does not send the same request to both models.", "routing"),
+          step("response", "alternate", "gateway", "Receive the canary result", "The chosen backend returns its response and the response can identify the model that served it.", "You can count served requests to verify the split over many calls.", "routing"), deliver],
+      },
+      streaming: {
+        nav: "Streaming usage", title: "Stream a response and account for usage", summary: "Read output before the full response is ready.", outcome: "Server-sent events", caveat: "This follows the lab's Chat Completions example. The two stream hops are shown in sequence for readability; the gateway relays chunks as the stream flows. The Responses API exposes usage in response.completed instead.",
+        steps: [
+          step("request", "app", "gateway", "Ask for streaming", "The client calls the alias with stream enabled. It can also request a final usage chunk with include_usage.", "Requesting client-visible usage is separate from configuring a gateway limit.", "streaming"),
+          step("policy", "gateway", "gateway", "Check limits before streaming", "Configured token or cost limits are checked before the stream starts.", "A caller already over a configured limit does not have to open a model stream before the gateway refuses it.", "streaming"),
+          model,
+          { ...step("response", "model", "gateway", "Receive streamed chunks", "The model sends server-sent events with incremental output. The gateway captures usage for its own limits, budgets and Monitoring.", "Gateway token limits count streaming usage even when the caller doesn't ask to see it.", "streaming"), stream: true },
+          { ...step("response", "gateway", "app", "Relay the stream", "The client receives incremental output. With include_usage, the final usage chunk can have no choices.", "Read usage separately from text deltas; the client doesn't need to buffer the whole reply before displaying text.", "streaming"), stream: true }],
+      },
+      tools: {
+        nav: "Federated MCP", title: "Discover and call an allowed MCP tool", summary: "One endpoint, namespaced tools, and explicit exposure controls.", outcome: "Allowed invocation", caveat: "The MCP session is already initialized. Tool filtering controls discovery and invocation through this gateway; it doesn't replace authorization in the underlying tool.",
+        steps: [
+          step("request", "agent", "gateway", "List tools", "The agent sends tools/list to the gateway's federated MCP endpoint.", "It can discover tools without managing a separate client connection to each source.", "tools"),
+          step("policy", "gateway", "gateway", "Filter the exposed tools", "The gateway applies configured allow or block patterns. In the lab, the blocked *_fetch tools are absent from discovery.", "The server exposes selected capabilities rather than every tool behind each source.", "toolPolicy"),
+          step("response", "gateway", "agent", "Return namespaced tools", "The response carries ready-to-call tool names that identify the source namespace.", "Namespaces prevent collisions when sources expose similarly named tools.", "tools"),
+          step("request", "agent", "gateway", "Send tools/call", "The agent chooses an allowed search tool from discovery and submits its invocation.", "Discovery and invocation are distinct requests.", "toolPolicy"),
+          step("request", "gateway", "tools", "Forward to one MCP source", "The gateway routes the namespaced invocation to the matching registered source.", "Federation is a unified endpoint, not a broadcast to every backend.", "tools"),
+          step("response", "tools", "gateway", "Receive the tool result", "The registered tool source performs the operation and sends back its result.", "The tool source executes the tool; the gateway mediates access to it.", "tools"),
+          step("response", "gateway", "agent", "Return the tool result", "The gateway returns the tool response to the agent.", "The runtime decides how to use the result.", "tools")],
+      },
+      limits: {
+        nav: "Token limit", title: "Throttle a caller at its token limit", summary: "A per-caller allowance can stop one caller before shared capacity runs out.", outcome: "429 · Retry-After", caveat: "The lab notes that a fast burst can overshoot the limit before the first 429. This trace starts when the gateway enforces the limit; the model is not called.",
+        steps: [submit,
+          step("policy", "gateway", "gateway", "Check this caller's allowance", "The gateway checks the token limit using the caller's identity. This caller is over its allowance.", "One caller can be throttled while other callers of the same model continue to have their own allowance.", "limits"),
+          step("error", "gateway", "app", "Answer with 429 and Retry-After", "The gateway returns 429 Too Many Requests and Retry-After instead of forwarding to the model.", "The client can back off using that hint. This is a gateway policy outcome, not proof of provider capacity exhaustion.", "limits")],
+      },
+      budget: {
+        nav: "Cost budget", title: "Enforce a per-caller cost budget", summary: "A monetary limit is separate from a token rate limit.", outcome: "403 · Cost quota", caveat: "The lab demonstrates estimated cost and caller-specific overrides. This is not a billing invoice, and the 403 outcome is different from token limit throttling.",
+        steps: [submit,
+          step("policy", "gateway", "gateway", "Check the effective budget", "The configured cost policy applies a budget for a time window and can override it for specific keys or Entra identities. This caller has exhausted its effective budget.", "Different teams can share the same gateway without sharing one spending allowance.", "budget"),
+          step("error", "gateway", "app", "Answer with a cost quota error", "The gateway returns 403 LlmCostQuotaExceeded instead of sending the request to a backend.", "Clients can distinguish estimated cost-budget exhaustion from a 429 rate-limit response.", "budget")],
+      },
+      safety: {
+        nav: "Content safety", title: "Block an inbound prompt at the gateway", summary: "See a gateway content-safety decision without sending the prompt to the model.", outcome: "400 · Gateway block", caveat: "This shows the inbound blocking case. The lab also documents response screening and how to distinguish gateway blocks from Foundry's own filters.",
+        steps: [submit,
+          step("policy", "gateway", "gateway", "Screen the prompt", "The configured content-safety policy inspects the inbound prompt and finds that it exceeds a configured threshold.", "The gateway can apply a common ruleset independently of a provider's own filters.", "safety"),
+          step("error", "gateway", "app", "Return the gateway block", "The client receives HTTP 400. This prompt stops at the gateway without a model call.", "The gateway policy is the failure point in this example, not the backend's content filter.", "safety")],
+      },
+      agent: {
+        nav: "Hosted agent", title: "Govern a Foundry agent's model and tool calls", summary: "Foundry runs the agent; the gateway governs its configured dependencies.", outcome: "Two runtime identities", caveat: "The identity split shown is specific to the hosted-agent lab. This is not an A2A request, and the gateway does not plan or execute the agent run.",
+        steps: [
+          step("request", "agent", "gateway", "Call the model with Agent ID", "The hosted agent uses its Microsoft Entra Agent ID for model calls. The identity has the AI Gateway User role in this lab.", "The agent holds no runtime key for this model call.", "agents"),
+          step("request", "gateway", "model", "Forward the model call", "The gateway routes the agent's alias to a configured model deployment outside the agent's Foundry project.", "The project can run the agent without hosting its own model deployment.", "agents"),
+          reply,
+          step("response", "gateway", "agent", "Return model output", "The runtime gets the model response and can choose to use a tool.", "Model routing and deciding which tool to use are different responsibilities.", "agents"),
+          step("request", "agent", "gateway", "Call MCP with project identity", "The lab uses the Foundry project's managed identity with the AI Gateway User role for its MCP call.", "The model caller and the tool caller need not be the same principal.", "agents"),
+          step("request", "gateway", "tools", "Invoke the registered tool", "The request reaches the registered Learn MCP source through the configured endpoint.", "The gateway is the policy boundary for the tool request.", "agents"),
+          step("response", "tools", "gateway", "Receive the tool result", "The MCP source returns its result to the gateway.", "The tool execution remains with the source.", "agents"),
+          step("response", "gateway", "agent", "Return the MCP result", "The agent receives the result and continues its run in Foundry.", "The model call and the MCP call remain separate gateway interactions.", "agents")],
+      },
+      telemetry: {
+        nav: "Usage & chargeback", title: "Attribute traffic without adding a response hop", summary: "Follow usage signals to Monitoring and Application Insights.", outcome: "Attributed telemetry", caveat: "Telemetry is shown after the response for readability, not as a timing guarantee. Configured claim export identifies gateway traffic, not every span in the agent runtime.",
+        steps: [
+          step("config", "config", "gateway", "Choose identity attributes", "The platform team selects which JWT claims to export and checks that caller tokens contain those claims.", "Attribution works only with fields that are present and configured for export.", "telemetry"),
+          submit, model, reply, deliver,
+          step("telemetry", "gateway", "metrics", "Emit gateway signals", "The gateway records usage and can export metrics, logs and traces with selected caller attributes to configured observability destinations.", "Operations can correlate outcomes, tokens, estimated cost and caller context separately from serving the reply.", "telemetry"),
+          step("telemetry", "metrics", "metrics", "Group usage for chargeback", "The lab groups request logs by tenant, client app, and API key. It also shows how to query token and cost metrics without double counting token types.", "A shared gateway can provide data for cost attribution without putting the report in the runtime path.", "telemetry")],
+      },
+    };
+
+    const kinds = { request: "Request", response: "Response", policy: "Policy decision", error: "Stopped", telemetry: "Telemetry", config: "Configuration" };
+    const $ = (id) => document.getElementById(id);
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+    const state = { route: "", index: 0, selected: null, playing: false, elapsed: 0, frame: 0, last: null, motion: !reducedMotion.matches, manualMotion: false };
+    const svgNS = "http://www.w3.org/2000/svg";
+    const flowNames = Object.keys(flows);
+    const detailPanels = ["blueprint", "sources"];
+    const stepNumber = (index) => String(index + 1).padStart(2, "0");
+    let activePath;
+    let activePackets = [];
+    let journeyButtons = [];
+    const mapNodes = new Map();
+
+    function svg(tag, attrs, value) {
+      const element = document.createElementNS(svgNS, tag);
+      for (const [key, val] of Object.entries(attrs)) element.setAttribute(key, val);
+      if (value) element.textContent = value;
+      return element;
+    }
+
+    function setSource(anchor, key) {
+      const [path, title] = sources[key];
+      anchor.href = `${sourceBase}${path}/README.md`;
+      anchor.title = title;
+    }
+
+    function pathBetween(from, to) {
+      const a = nodes[from], b = nodes[to];
+      if (a.x === b.x) return `M${a.x} ${a.y - 26} V${b.y + 26}`;
+      const sign = Math.sign(b.x - a.x);
+      const start = a.x + sign * 94, end = b.x - sign * 94;
+      const mid = (start + end) / 2;
+      return `M${start} ${a.y} C${mid} ${a.y},${mid} ${b.y},${end} ${b.y}`;
+    }
+
+    function drawTrace(current) {
+      const flow = flows[state.route];
+      const relevant = new Set(flow.steps.flatMap(({ from, to }) => [from, to]));
+      for (const [id, group] of mapNodes) {
+        group.setAttribute("class", ["node", id === current.from || id === current.to ? `active ${current.kind}` : "", relevant.has(id) ? "relevant" : "", id === state.selected ? "policy" : ""].join(" "));
+        group.setAttribute("aria-pressed", String(id === state.selected));
+      }
+
+      const drawPath = ({ kind, from, to }, active = false) => svg("path", {
+        d: pathBetween(from, to),
+        class: `edge ${kind}${active ? " active" : ""}${kind === "config" || kind === "telemetry" ? " dashed" : ""}`,
+        ...(active ? { "marker-end": "url(#arrow)" } : {}),
+      });
+      $("paths").replaceChildren();
+      const guides = new Set();
+      for (const edge of flow.steps) {
+        if (edge.from === edge.to) continue;
+        const key = [edge.from, edge.to].sort().join("/");
+        if (guides.has(key)) continue;
+        guides.add(key);
+        $("paths").append(drawPath(edge));
+      }
+      activePath = current.from === current.to ? null : drawPath(current, true);
+      if (activePath) $("paths").append(activePath);
+      activePackets = activePath ? Array.from({ length: current.stream ? 3 : 1 }, () =>
+        svg("circle", { r: 5, class: `packet ${current.kind}`, visibility: "hidden" })) : [];
+      $("packets").replaceChildren(...activePackets);
+      paintPackets();
+    }
+
+    function renderStep(announce = false) {
+      const flow = flows[state.route];
+      const current = flow.steps[state.index];
+      const count = `${state.index + 1} / ${flow.steps.length}`;
+      $("step-range").value = state.index;
+      $("step-range").setAttribute("aria-valuetext", `Step ${state.index + 1} of ${flow.steps.length}: ${current.title}`);
+      $("step-count").value = count;
+      $("step-index").textContent = `Step ${count}`;
+      $("step-kind").textContent = state.selected ? "Component" : kinds[current.kind];
+      $("step-title").textContent = current.title;
+      $("step-text").textContent = current.text;
+      $("step-value").textContent = current.value;
+      setSource($("step-source"), current.source);
+      journeyButtons.forEach((button, index) => {
+        if (index === state.index) button.setAttribute("aria-current", "step");
+        else button.removeAttribute("aria-current");
+      });
+      if (announce) $("announcement").textContent = `Step ${count}: ${current.title}`;
+      drawTrace(current);
+      updateControls();
+    }
+
+    function selectComponent(id, focus = false) {
+      state.selected = id;
+      $("step-panel").hidden = !!id;
+      $("component-panel").hidden = !id;
+      $("inspector-name").textContent = id ? "Component inspector" : "Trace inspector";
+      if (!id) return;
+      const node = nodes[id];
+      $("component-title").textContent = node.title;
+      $("component-text").textContent = node.detail;
+      $("component-value").textContent = node.boundary;
+      setSource($("component-source"), node.source);
+      if (focus) $("component-title").focus();
+    }
+
+    function renderFlow() {
+      const flow = flows[state.route];
+      $("flow-index").textContent = stepNumber(flowNames.indexOf(state.route));
+      $("flow-title").textContent = flow.title;
+      $("flow-summary").textContent = flow.summary;
+      $("outcome").textContent = flow.outcome;
+      $("caveat").textContent = flow.caveat;
+      $("step-range").max = flow.steps.length - 1;
+      journeyButtons = flow.steps.map(({ title }, index) => {
+        const button = document.createElement("button");
+        const number = document.createElement("span");
+        number.className = "index";
+        number.textContent = stepNumber(index);
+        button.append(number, title);
+        button.addEventListener("click", () => seek(index));
+        return button;
+      });
+      $("journey").replaceChildren(...journeyButtons.map((button) => {
+        const item = document.createElement("li");
+        item.append(button);
+        return item;
+      }));
+      renderStep();
+    }
+
+    function readRoute() {
+      const requested = location.hash.slice(1);
+      const route = flowNames.includes(requested) || detailPanels.includes(requested) ? requested : "inference";
+      if (route === state.route) return;
+      stop();
+      state.route = route;
+      state.index = 0;
+      state.elapsed = 0;
+      selectComponent(null);
+      $("traffic").hidden = !Object.hasOwn(flows, route);
+      for (const id of detailPanels) $(id).hidden = route !== id;
+      for (const button of document.querySelectorAll("nav [data-route]")) {
+        if (button.dataset.route === route) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      }
+      if (!$("traffic").hidden) renderFlow();
+    }
+
+    function updateControls() {
+      const last = state.index === flows[state.route].steps.length - 1;
+      $("play").textContent = state.playing ? "Pause" : last && state.elapsed >= 1 ? "Replay" : "Play";
+      $("previous").disabled = state.index === 0;
+      $("next").disabled = last;
+      $("motion").setAttribute("aria-pressed", String(state.motion));
+      $("motion").textContent = state.motion ? "Motion on" : "Motion off";
+    }
+
+    function paintPackets() {
+      if (!activePath) return;
+      const length = activePath.getTotalLength();
+      activePackets.forEach((packet, index) => {
+        const position = state.elapsed * (activePackets.length > 1 ? 1.32 : 1) - index * .16;
+        packet.setAttribute("visibility", state.motion && position > 0 && position < 1 ? "visible" : "hidden");
+        const point = activePath.getPointAtLength(Math.min(1, Math.max(0, position)) * length);
+        packet.setAttribute("cx", point.x);
+        packet.setAttribute("cy", point.y);
+      });
+    }
+
+    function stop() {
+      cancelAnimationFrame(state.frame);
+      state.frame = 0;
+      state.playing = false;
+      state.last = null;
+    }
+
+    function seek(index) {
+      stop();
+      state.index = index;
+      state.elapsed = 0;
+      selectComponent(null);
+      renderStep(true);
+    }
+
+    function tick(now) {
+      if (state.last !== null) state.elapsed = Math.min(1, state.elapsed + (now - state.last) * Number($("speed").value) / 2100);
+      state.last = now;
+      paintPackets();
+      if (state.elapsed >= 1) {
+        if (state.index === flows[state.route].steps.length - 1) {
+          stop();
+          updateControls();
+          return;
+        }
+        state.index++;
+        state.elapsed = 0;
+        renderStep();
+      }
+      state.frame = requestAnimationFrame(tick);
+    }
+
+    for (const [id, node] of Object.entries(nodes)) {
+      const group = svg("g", { transform: `translate(${node.x} ${node.y})`, role: "button", tabindex: "0", "aria-label": `Inspect ${node.title}`, "aria-pressed": "false" });
+      group.append(svg("rect", { x: -94, y: -26, width: 188, height: 52, rx: 10 }),
+        svg("text", { x: -82, y: -3, class: "node-title" }, node.title),
+        svg("text", { x: -82, y: 15, class: "node-subtitle" }, node.label));
+      const inspect = () => { stop(); selectComponent(id, true); renderStep(); };
+      group.addEventListener("click", inspect);
+      group.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); inspect(); }
+      });
+      $("nodes").append(group);
+      mapNodes.set(id, group);
+    }
+    for (const [index, id] of flowNames.entries()) {
+      const button = document.createElement("button");
+      const number = document.createElement("span");
+      number.className = "index";
+      number.setAttribute("aria-hidden", "true");
+      number.textContent = stepNumber(index);
+      button.className = "nav-button";
+      button.dataset.route = id;
+      button.append(number, flows[id].nav);
+      $("flows").append(button);
+    }
+    for (const [key, [, title]] of Object.entries(sources)) {
+      const li = document.createElement("li");
+      const link = document.createElement("a");
+      link.textContent = title;
+      setSource(link, key);
+      li.append(link);
+      $("source-list").append(li);
+    }
+    for (const link of document.querySelectorAll("[data-source]")) setSource(link, link.dataset.source);
+    for (const button of document.querySelectorAll("[data-route]")) button.addEventListener("click", () => {
+      if (state.route !== button.dataset.route) history.pushState(null, "", `#${button.dataset.route}`);
+      readRoute();
+      if (!button.closest("nav")) $(Object.hasOwn(flows, state.route) ? "traffic-title" : `${state.route}-title`).scrollIntoView({ block: "nearest" });
+    });
+    window.addEventListener("popstate", readRoute);
+    window.addEventListener("hashchange", readRoute);
+    $("play").addEventListener("click", () => {
+      if (state.playing) {
+        stop();
+        updateControls();
+        return;
+      }
+      if (state.elapsed >= 1) seek(0);
+      selectComponent(null);
+      state.playing = true;
+      renderStep();
+      state.frame = requestAnimationFrame(tick);
+    });
+    $("previous").addEventListener("click", () => seek(state.index - 1));
+    $("next").addEventListener("click", () => seek(state.index + 1));
+    $("restart").addEventListener("click", () => seek(0));
+    $("step-range").addEventListener("input", (event) => seek(Number(event.target.value)));
+    $("motion").addEventListener("click", () => {
+      state.manualMotion = true;
+      state.motion = !state.motion;
+      paintPackets();
+      updateControls();
+    });
+    reducedMotion.addEventListener("change", (event) => {
+      if (state.manualMotion) return;
+      state.motion = !event.matches;
+      paintPackets();
+      if (Object.hasOwn(flows, state.route)) updateControls();
+    });
+    $("return").addEventListener("click", () => {
+      const focus = mapNodes.get(state.selected);
+      selectComponent(null);
+      renderStep();
+      focus?.focus();
+    });
+    const themeLabel = () => { $("theme").textContent = `Theme: ${document.documentElement.dataset.theme === "dark" ? "dark" : "light"}`; };
+    $("theme").addEventListener("click", () => {
+      document.documentElement.dataset.theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+      themeLabel();
+    });
+    themeLabel();
+    readRoute();
+  </script>
+</body>
+</html>
